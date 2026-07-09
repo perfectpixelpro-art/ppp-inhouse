@@ -1,0 +1,43 @@
+:root {
+  /* Palette: black, white, red */
+  --black: #0d0d0d;
+  --white: #ffffff;
+  --red: #e11d2a;
+  --red-dark: #b3141f;
+  --gray-50: #f6f6f7;
+  --gray-200: #e4e4e7;
+  --gray-400: #a1a1aa;
+  --gray-600: #52525b;
+
+  font-family: "Poppins", system-ui, sans-serif;
+  color: var(--black);
+  background: var(--white);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+}
+
+body {
+  margin: 0;
+}
+
+button {
+  font-family: inherit;
+  cursor: pointer;
+}
+
+input {
+  font-family: inherit;
+}
+
+a {
+  color: var(--red);
+  text-decoration: none;
+}
