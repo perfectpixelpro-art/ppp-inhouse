@@ -13,12 +13,12 @@ export const getHolidays = async (req, res) => {
 // POST /api/holidays
 export const createHoliday = async (req, res) => {
   const { name, date } = req.body;
-  if (!name || !date) {
-    return res.status(400).json({ message: "name and date are required" });
+  if (!name) {
+    return res.status(400).json({ message: "name is required" });
   }
   const holiday = await Holiday.create({
     name,
-    date,
+    date: date || undefined, // festivals with shifting dates may be name-only
     type: req.body.type || "national",
     description: req.body.description,
   });

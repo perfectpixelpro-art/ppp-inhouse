@@ -23,9 +23,17 @@ export default function EmpUpcomingHolidaysPage() {
   const [syncMsg, setSyncMsg] = useState("");
   const [syncing, setSyncing] = useState(false);
 
+  // Dated holidays first (soonest first); festivals with no date yet go last.
+  const byDate = (a, b) => {
+    if (!a.date && !b.date) return a.name.localeCompare(b.name);
+    if (!a.date) return 1;
+    if (!b.date) return -1;
+    return new Date(a.date) - new Date(b.date);
+  };
+
   const load = () =>
     fetchHolidays()
-      .then((hs) => setList(hs.filter((h) => h.type === "national").sort((a, b) => new Date(a.date) - new Date(b.date))))
+      .then((hs) => setList(hs.filter((h) => h.type === "national").sort(byDate)))
       .finally(() => setLoading(false));
 
   const syncCalendar = async () => {
@@ -70,7 +78,7 @@ export default function EmpUpcomingHolidaysPage() {
       ) : (
         <>
         <div style={{ marginBottom: "1.5rem" }}>
-          <Calendar events={list.map((h) => ({ date: h.date, label: h.name, kind: "holiday" }))} />
+          <Calendar events={list.filter((h) => h.date).map((h) => ({ date: h.date, label: h.name, kind: "holiday" }))} />
         </div>
         <div className="table-wrap">
           <table className="data">
@@ -79,11 +87,11 @@ export default function EmpUpcomingHolidaysPage() {
             </thead>
             <tbody>
               {list.map((h) => {
-                const n = daysUntil(h.date);
+                const n = h.date ? daysUntil(h.date) : null;
                 return (
                   <tr key={h._id} style={n === 0 ? { background: "#fff1f2" } : undefined}>
                     <td className="p-name">{h.name}</td>
-                    <td>{fmtDay(h.date)}</td>
+                    <td>{h.date ? fmtDay(h.date) : <span style={{ color: "var(--gray-400)" }}>—</span>}</td>
                     <td><span className="badge badge-red">{h.type}</span></td>
                   </tr>
                 );

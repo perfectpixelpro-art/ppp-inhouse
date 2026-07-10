@@ -371,6 +371,31 @@ table.data tbody tr:hover {
 .att-n { background: var(--gray-200); color: var(--gray-600); }
 .att-rain { background: #dbeafe; color: #1e40af; }
 
+/* Overtime / short balance card */
+.balance-card {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1.5rem;
+  background: #fff;
+  border: 1px solid var(--gray-200);
+  border-radius: 12px;
+  padding: 1rem 1.25rem;
+  margin: 1rem 0;
+}
+.balance-net { display: flex; flex-direction: column; gap: 2px; }
+.balance-label { font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.04em; color: var(--gray-500); }
+.balance-value { font-size: 1.9rem; font-weight: 800; line-height: 1.1; }
+.balance-value.up { color: #15803d; }
+.balance-value.down { color: #b91c1c; }
+.balance-sub { font-size: 0.78rem; color: var(--gray-500); }
+.balance-split { display: flex; gap: 1.75rem; }
+.balance-split > div { display: flex; flex-direction: column; gap: 4px; }
+.balance-chip { font-weight: 700; font-size: 1rem; }
+.balance-chip.up { color: #15803d; }
+.balance-chip.down { color: #b91c1c; }
+
 /* First-login profile completion */
 .profile-setup {
   min-height: 100vh;

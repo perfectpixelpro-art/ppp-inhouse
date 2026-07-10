@@ -3,6 +3,7 @@ import { myAttendance, myToday, checkIn, checkOut, saveDsr, markRain } from "../
 import { fmtDate, fmtTime } from "../../panel/utils";
 import Modal from "../../panel/Modal";
 import AttendanceCalendar from "../../panel/AttendanceCalendar";
+import BalanceCard from "../../panel/BalanceCard";
 import "./attendance.css";
 
 const HOUR = 3600000;
@@ -246,6 +247,8 @@ export default function MyAttendancePage() {
               )}
             </div>
           </div>
+
+          <BalanceCard records={records} />
 
           <label className="rain-toggle" title="Tick before checking in — HR is notified and no auto-deduction applies">
             <input

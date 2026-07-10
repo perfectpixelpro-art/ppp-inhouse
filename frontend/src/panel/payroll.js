@@ -36,6 +36,15 @@ export function monthlySummary(year, month0, records, holidaySet = new Set()) {
   return { workingDays, baseMs, workedMs, diffMs, shortHours, deduction, rainDays: rainDates.length };
 }
 
+// Net overtime (+) or shortfall (−) across finished days, in ms.
+// Rain days are exempt (HR reviews them manually), same as the deduction.
+export const targetMsFor = (r) => (r.dayType === "half" ? 4 : 8) * HOUR;
+export function netBalanceMs(records = []) {
+  return records
+    .filter((r) => r.state === "ended" && !r.rain)
+    .reduce((sum, r) => sum + ((r.workedMs || 0) - targetMsFor(r)), 0);
+}
+
 // self-check: node src/panel/payroll.js
 if (typeof process !== "undefined" && process.argv?.[1] && import.meta.url === `file://${process.argv[1]}`) {
   const eq = (a, b, m) => console.assert(a === b, `${m}: got ${a} exp ${b}`);
@@ -55,5 +64,13 @@ if (typeof process !== "undefined" && process.argv?.[1] && import.meta.url === `
   // rain day excluded: base drops 25→24 working days (200h→192h); worked 190h → short 2h → ₹400
   const s3 = monthlySummary(2026, 6, [{ workedMs: 190 * HOUR, rain: true, date: "2026-07-06" }], new Set());
   eq(s3.deduction, 400, "rain day excluded from base");
+  // net balance: +1h overtime, −2h short, rain day ignored → net −1h
+  const recs = [
+    { state: "ended", workedMs: 9 * HOUR },
+    { state: "ended", workedMs: 6 * HOUR },
+    { state: "ended", workedMs: 0, rain: true },
+    { state: "working", workedMs: 3 * HOUR },
+  ];
+  eq(netBalanceMs(recs), -1 * HOUR, "net balance skips rain + unfinished days");
   console.log("payroll self-check done");
 }

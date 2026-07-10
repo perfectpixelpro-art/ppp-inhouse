@@ -4,6 +4,7 @@ import { fmtDate, fmtTime, thisMonth, monthLabel, inr } from "../utils";
 import Avatar from "../Avatar";
 import Modal from "../Modal";
 import AttendanceCalendar from "../AttendanceCalendar";
+import BalanceCard from "../BalanceCard";
 import { monthlySummary, SHORT_RATE } from "../payroll";
 
 const HOUR = 3600000;
@@ -93,6 +94,11 @@ export default function AttendancePage() {
           <div className="stat-value">{fmtHm(totalWorked)}</div>
         </div>
       </div>
+
+      <BalanceCard
+        records={records}
+        label={emp ? "Balance — selected employee" : "Balance — all employees"}
+      />
 
       {loading ? (
         <div className="loading">Loading…</div>
