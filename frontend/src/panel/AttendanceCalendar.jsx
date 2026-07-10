@@ -123,7 +123,8 @@ export default function AttendanceCalendar({ records = [], month, showName = fal
                     </div>
                     <div>
                       <span className="rg-label">Overtime / Short</span>
-                      {ended && ot > 60000 ? <span style={{ color: "#15803d", fontWeight: 700 }}>+{fmtHm(ot)}</span>
+                      {r.rain ? <span className="badge att-rain">🌧 Exempt</span>
+                        : ended && ot > 60000 ? <span style={{ color: "#15803d", fontWeight: 700 }}>+{fmtHm(ot)}</span>
                         : ended && ot < -60000 ? <span style={{ color: "#b91c1c", fontWeight: 700 }}>−{fmtHm(-ot)}</span>
                         : <span>—</span>}
                     </div>

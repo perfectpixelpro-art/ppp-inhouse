@@ -132,7 +132,7 @@ export default function AttendancePage() {
                     <td style={{ color: "#15803d", fontWeight: 600 }}>{fmtTime(r.checkIn)}</td>
                     <td style={{ color: "var(--red-dark)", fontWeight: 600 }}>{fmtTime(r.checkOut)}</td>
                     <td>{r.state === "ended" ? <span className={`badge ${workedClass(ms, targetMs(r))}`}>{fmtHm(ms)}</span> : "—"}</td>
-                    <td>{r.state === "ended" && ot > 60000 ? <span style={{ color: "#15803d", fontWeight: 700 }}>+{fmtHm(ot)}</span> : "—"}</td>
+                    <td>{r.rain ? <span className="badge att-rain">exempt</span> : r.state === "ended" && ot > 60000 ? <span style={{ color: "#15803d", fontWeight: 700 }}>+{fmtHm(ot)}</span> : "—"}</td>
                     <td>{r.rain ? <span className="badge att-rain">exempt</span> : r.state === "ended" && ot < -60000 ? <span style={{ color: "#b91c1c", fontWeight: 700 }}>−{fmtHm(-ot)}</span> : "—"}</td>
                     <td>
                       <span className={`badge ${r.state === "ended" ? "badge-approved" : "badge-pending"}`}>{r.state}</span>

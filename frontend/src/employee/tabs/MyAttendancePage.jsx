@@ -304,9 +304,10 @@ export default function MyAttendancePage() {
                           {r.dayType === "half" ? "Half" : "Full"}
                         </span>
                         {r.autoClosed && <span className="badge badge-red" style={{ marginLeft: 4 }}>⚠ {r.note}</span>}
+                        {r.rain && <span className="badge att-rain" style={{ marginLeft: 4 }}>🌧 Rain</span>}
                       </td>
-                      <td>{ot > 60000 ? <span className="delta up">+{fmtHm(ot)}</span> : "—"}</td>
-                      <td>{ot < -60000 ? <span className="delta down">−{fmtHm(-ot)}</span> : "—"}</td>
+                      <td>{r.rain ? <span className="badge att-rain">exempt</span> : ot > 60000 ? <span className="delta up">+{fmtHm(ot)}</span> : "—"}</td>
+                      <td>{r.rain ? <span className="badge att-rain">exempt</span> : ot < -60000 ? <span className="delta down">−{fmtHm(-ot)}</span> : "—"}</td>
                       <td><LocationStamp loc={r.checkInLocation} /></td>
                       <td className="dsr-cell">
                         {r.dsr
