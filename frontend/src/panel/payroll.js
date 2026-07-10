@@ -22,26 +22,23 @@ export function workingDaysInMonth(year, month0, holidaySet = new Set()) {
 }
 
 // records: this employee's attendance for the month. Returns hours + money.
-// Rain-flagged days are excluded from the required working days (no auto-deduction —
-// HR reviews them manually), the same way national holidays are excluded.
+// Rain days are flagged for HR's information but count like any other working day.
 export function monthlySummary(year, month0, records, holidaySet = new Set()) {
-  const rainDates = records.filter((r) => r.rain).map((r) => r.date);
-  const offSet = rainDates.length ? new Set([...holidaySet, ...rainDates]) : holidaySet;
-  const workingDays = workingDaysInMonth(year, month0, offSet);
+  const workingDays = workingDaysInMonth(year, month0, holidaySet);
   const baseMs = workingDays * 8 * HOUR;
   const workedMs = records.reduce((s, r) => s + (r.workedMs || 0), 0);
   const diffMs = workedMs - baseMs; // + overtime, − short
   const shortHours = diffMs < 0 ? -diffMs / HOUR : 0;
   const deduction = Math.round(shortHours * SHORT_RATE);
-  return { workingDays, baseMs, workedMs, diffMs, shortHours, deduction, rainDays: rainDates.length };
+  return { workingDays, baseMs, workedMs, diffMs, shortHours, deduction, rainDays: records.filter((r) => r.rain).length };
 }
 
 // Net overtime (+) or shortfall (−) across finished days, in ms.
-// Rain days are exempt (HR reviews them manually), same as the deduction.
+// Rain days count like any other day; only unfinished days are left out.
 export const targetMsFor = (r) => (r.dayType === "half" ? 4 : 8) * HOUR;
 export function netBalanceMs(records = []) {
   return records
-    .filter((r) => r.state === "ended" && !r.rain)
+    .filter((r) => r.state === "ended")
     .reduce((sum, r) => sum + ((r.workedMs || 0) - targetMsFor(r)), 0);
 }
 
@@ -61,16 +58,16 @@ if (typeof process !== "undefined" && process.argv?.[1] && import.meta.url === `
   eq(s.deduction, 2000, "short 10h deduction");
   const s2 = monthlySummary(2026, 6, [{ workedMs: 210 * HOUR }], new Set());
   eq(s2.deduction, 0, "overtime no deduction");
-  // rain day excluded: base drops 25→24 working days (200h→192h); worked 190h → short 2h → ₹400
+  // a rain day does NOT change the base: still 25 working days (200h); worked 190h → ₹2000
   const s3 = monthlySummary(2026, 6, [{ workedMs: 190 * HOUR, rain: true, date: "2026-07-06" }], new Set());
-  eq(s3.deduction, 400, "rain day excluded from base");
-  // net balance: +1h overtime, −2h short, rain day ignored → net −1h
+  eq(s3.deduction, 2000, "rain day counts like a normal day");
+  // net balance: +1h, −2h, rain day −8h all count; unfinished day ignored → net −9h
   const recs = [
     { state: "ended", workedMs: 9 * HOUR },
     { state: "ended", workedMs: 6 * HOUR },
     { state: "ended", workedMs: 0, rain: true },
     { state: "working", workedMs: 3 * HOUR },
   ];
-  eq(netBalanceMs(recs), -1 * HOUR, "net balance skips rain + unfinished days");
+  eq(netBalanceMs(recs), -9 * HOUR, "net balance counts rain, skips unfinished days");
   console.log("payroll self-check done");
 }

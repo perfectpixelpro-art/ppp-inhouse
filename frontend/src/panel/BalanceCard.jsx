@@ -7,10 +7,10 @@ const fmtHm = (ms) => {
   return h ? (mm ? `${h}h ${mm}m` : `${h}h`) : `${mm}m`;
 };
 
-// Overall overtime / shortfall across finished days. Rain days are exempt.
+// Overall overtime / shortfall across finished days. Rain days count normally.
 // Used on both the employee In/Out page and the admin/HR In/Out tab.
 export default function BalanceCard({ records = [], label = "Overall balance" }) {
-  const done = records.filter((r) => r.state === "ended" && !r.rain);
+  const done = records.filter((r) => r.state === "ended");
   let over = 0;
   let short = 0;
   for (const r of done) {

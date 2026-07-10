@@ -1,38 +1,11 @@
 [
  {
   "date": "2026-07-01",
-  "name": "Rahul Bisht",
-  "in": "11:00 AM",
-  "out": "8:14 PM",
-  "hours": "08:14",
-  "dsr": "black in hr emailer | SMM Hiring website | Deepak Khatri graphic - 1",
-  "rain": false
- },
- {
-  "date": "2026-07-01",
-  "name": "Utkarsh",
-  "in": "12:51 PM",
-  "out": "8:29 PM",
-  "hours": "06:38",
-  "dsr": "PPP Content Changes and Image Optimization",
-  "rain": false
- },
- {
-  "date": "2026-07-01",
   "name": "Madhav",
   "in": "11:31 AM",
   "out": "8:33 PM",
   "hours": "08:02",
   "dsr": "Black in hr Automation Emailer | Black in hr july theme | GAI daily ai timestamps and caption check | GAI briefing and rating | Williams scheduling | Deepak khatri .com content & posting",
-  "rain": false
- },
- {
-  "date": "2026-07-01",
-  "name": "Saquib Khan",
-  "in": "12:51 PM",
-  "out": "8:30 PM",
-  "hours": "06:39",
-  "dsr": "FIXED BUGS IN PPP | WORKED ON ADMIN LOGIN AND DASHBOARD IN SMMHIRING",
   "rain": false
  },
  {
@@ -46,6 +19,42 @@
  },
  {
   "date": "2026-07-01",
+  "name": "Nikhil Sharma",
+  "in": "11:45 AM",
+  "out": "7:39 PM",
+  "hours": "06:54",
+  "dsr": "",
+  "rain": false
+ },
+ {
+  "date": "2026-07-01",
+  "name": "Rahul Bisht",
+  "in": "11:00 AM",
+  "out": "8:14 PM",
+  "hours": "08:14",
+  "dsr": "black in hr emailer | SMM Hiring website | Deepak Khatri graphic - 1",
+  "rain": false
+ },
+ {
+  "date": "2026-07-01",
+  "name": "Saquib Khan",
+  "in": "12:51 PM",
+  "out": "8:30 PM",
+  "hours": "06:39",
+  "dsr": "FIXED BUGS IN PPP | WORKED ON ADMIN LOGIN AND DASHBOARD IN SMMHIRING",
+  "rain": false
+ },
+ {
+  "date": "2026-07-01",
+  "name": "Utkarsh",
+  "in": "12:51 PM",
+  "out": "8:29 PM",
+  "hours": "06:38",
+  "dsr": "PPP Content Changes and Image Optimization",
+  "rain": false
+ },
+ {
+  "date": "2026-07-01",
   "name": "Yash Parcha",
   "in": "12:39 PM",
   "out": "8:31 PM",
@@ -55,11 +64,11 @@
  },
  {
   "date": "2026-07-02",
-  "name": "Saquib Khan",
-  "in": "10:39 AM",
-  "out": "8:09 PM",
-  "hours": "08:30",
-  "dsr": "Social99 Reel (in progress)",
+  "name": "Madhav",
+  "in": "11:17 AM",
+  "out": "8:31 PM",
+  "hours": "08:14",
+  "dsr": "Black in hr Automation Emailer | Black in hr july theme | GAI daily ai timestamps and caption check | GAI briefing and rating | Social 99 Content | Williams scheduling",
   "rain": false
  },
  {
@@ -73,11 +82,11 @@
  },
  {
   "date": "2026-07-02",
-  "name": "Utkarsh",
-  "in": "11:00 AM",
-  "out": "8:21 PM",
-  "hours": "08:21",
-  "dsr": "PPP Optimization Complete | Working on Social99_reviews website",
+  "name": "Nikhil Sharma",
+  "in": "11:13 AM",
+  "out": "8:14 PM",
+  "hours": "08:01",
+  "dsr": "John interview 2 videos | SMM Hiring Socials Video in Progress",
   "rain": false
  },
  {
@@ -91,29 +100,56 @@
  },
  {
   "date": "2026-07-02",
-  "name": "Nikhil Sharma",
-  "in": "11:13 AM",
-  "out": "8:14 PM",
-  "hours": "08:01",
-  "dsr": "John interview 2 videos | SMM Hiring Socials Video in Progress",
+  "name": "Saquib Khan",
+  "in": "10:39 AM",
+  "out": "8:09 PM",
+  "hours": "08:30",
+  "dsr": "Social99 Reel (in progress)",
   "rain": false
  },
  {
   "date": "2026-07-02",
-  "name": "Madhav",
-  "in": "11:17 AM",
-  "out": "8:31 PM",
-  "hours": "08:14",
-  "dsr": "Black in hr Automation Emailer | Black in hr july theme | GAI daily ai timestamps and caption check | GAI briefing and rating | Social 99 Content | Williams scheduling",
+  "name": "Utkarsh",
+  "in": "11:00 AM",
+  "out": "8:21 PM",
+  "hours": "08:21",
+  "dsr": "PPP Optimization Complete | Working on Social99_reviews website",
+  "rain": false
+ },
+ {
+  "date": "2026-07-02",
+  "name": "Yash Parcha",
+  "in": "3:19 PM",
+  "out": "8:09 PM",
+  "hours": "03:50",
+  "dsr": "",
   "rain": false
  },
  {
   "date": "2026-07-03",
-  "name": "Utkarsh",
-  "in": "10:38 AM",
-  "out": "8:10 PM",
-  "hours": "08:32",
-  "dsr": "thesocial99-reviews website (Complete with content)",
+  "name": "Madhav",
+  "in": "11:28 AM",
+  "out": "9:08 PM",
+  "hours": "08:40",
+  "dsr": "Black in hr Automation Emailer | Black in hr july theme | Black in hr friday emailer | Deepak khatri .com content & posting",
+  "rain": false
+ },
+ {
+  "date": "2026-07-03",
+  "name": "Mukul Partap Singh",
+  "in": "11:28 AM",
+  "out": "8:04 PM",
+  "hours": "07:36",
+  "dsr": "AI Infrastructure set up | Blogs Automation Agents Completed",
+  "rain": false
+ },
+ {
+  "date": "2026-07-03",
+  "name": "Nikhil Sharma",
+  "in": "11:10 AM",
+  "out": "8:15 PM",
+  "hours": "08:05",
+  "dsr": "SMM 1 video",
   "rain": false
  },
  {
@@ -136,29 +172,11 @@
  },
  {
   "date": "2026-07-03",
-  "name": "Nikhil Sharma",
-  "in": "11:10 AM",
-  "out": "8:15 PM",
-  "hours": "08:05",
-  "dsr": "SMM 1 video",
-  "rain": false
- },
- {
-  "date": "2026-07-03",
-  "name": "Mukul Partap Singh",
-  "in": "11:28 AM",
-  "out": "8:04 PM",
-  "hours": "07:36",
-  "dsr": "AI Infrastructure set up | Blogs Automation Agents Completed",
-  "rain": false
- },
- {
-  "date": "2026-07-03",
-  "name": "Madhav",
-  "in": "11:28 AM",
-  "out": "9:08 PM",
-  "hours": "08:40",
-  "dsr": "Black in hr Automation Emailer | Black in hr july theme | Black in hr friday emailer | Deepak khatri .com content & posting",
+  "name": "Utkarsh",
+  "in": "10:38 AM",
+  "out": "8:10 PM",
+  "hours": "08:32",
+  "dsr": "thesocial99-reviews website (Complete with content)",
   "rain": false
  },
  {
@@ -172,47 +190,20 @@
  },
  {
   "date": "2026-07-04",
+  "name": "Madhav",
+  "in": "12:13 PM",
+  "out": "7:39 PM",
+  "hours": "06:26",
+  "dsr": "Black in hr Automation Emailer | Black in hr july theme | Black in hr friday emailer",
+  "rain": false
+ },
+ {
+  "date": "2026-07-04",
   "name": "Mukul Partap Singh",
   "in": "11:00 AM",
   "out": "7:41 PM",
   "hours": "07:41",
   "dsr": "Hermes Set up (lacking memory)",
-  "rain": false
- },
- {
-  "date": "2026-07-04",
-  "name": "Utkarsh",
-  "in": "11:00 AM",
-  "out": "7:42 PM",
-  "hours": "07:42",
-  "dsr": "The Social99reviews website Live",
-  "rain": false
- },
- {
-  "date": "2026-07-04",
-  "name": "Rahul Bisht",
-  "in": "11:00 AM",
-  "out": "7:42 PM",
-  "hours": "07:42",
-  "dsr": "SMM Hiring Website | Black in hr Emailer | GAI",
-  "rain": false
- },
- {
-  "date": "2026-07-04",
-  "name": "Yash Parcha",
-  "in": "11:12 AM",
-  "out": "7:37 PM",
-  "hours": "07:25",
-  "dsr": "Black In HR Reel Birthday | Social99 Reel",
-  "rain": false
- },
- {
-  "date": "2026-07-04",
-  "name": "Saquib Khan",
-  "in": "11:17 AM",
-  "out": "7:40 PM",
-  "hours": "07:23",
-  "dsr": "UPDATED DESIGN OF SMM HIRING ADMIN | WIREUP BACKEND OF SMM HIRING",
   "rain": false
  },
  {
@@ -226,11 +217,83 @@
  },
  {
   "date": "2026-07-04",
+  "name": "Rahul Bisht",
+  "in": "11:00 AM",
+  "out": "7:42 PM",
+  "hours": "07:42",
+  "dsr": "SMM Hiring Website | Black in hr Emailer | GAI",
+  "rain": false
+ },
+ {
+  "date": "2026-07-04",
+  "name": "Saquib Khan",
+  "in": "11:17 AM",
+  "out": "7:40 PM",
+  "hours": "07:23",
+  "dsr": "UPDATED DESIGN OF SMM HIRING ADMIN | WIREUP BACKEND OF SMM HIRING",
+  "rain": false
+ },
+ {
+  "date": "2026-07-04",
+  "name": "Utkarsh",
+  "in": "11:00 AM",
+  "out": "7:42 PM",
+  "hours": "07:42",
+  "dsr": "The Social99reviews website Live",
+  "rain": false
+ },
+ {
+  "date": "2026-07-04",
+  "name": "Yash Parcha",
+  "in": "11:12 AM",
+  "out": "7:37 PM",
+  "hours": "07:25",
+  "dsr": "Black In HR Reel Birthday | Social99 Reel",
+  "rain": false
+ },
+ {
+  "date": "2026-07-06",
   "name": "Madhav",
-  "in": "12:13 PM",
-  "out": "7:39 PM",
-  "hours": "06:26",
-  "dsr": "Black in hr Automation Emailer | Black in hr july theme | Black in hr friday emailer",
+  "in": "11:06 AM",
+  "out": "8:10 PM",
+  "hours": "08:04",
+  "dsr": "Black in hr Automation Emailer | Black in hr july theme | Black in hr Scheduling | Deepakkhatri.com Content and posting | william content | GAI briefing and rating | Smm Hiring content",
+  "rain": false
+ },
+ {
+  "date": "2026-07-06",
+  "name": "Megha Rana",
+  "in": "11:00 AM",
+  "out": "8:06 PM",
+  "hours": "08:06",
+  "dsr": "",
+  "rain": false
+ },
+ {
+  "date": "2026-07-06",
+  "name": "Mukul Partap Singh",
+  "in": "10:49 AM",
+  "out": "8:05 PM",
+  "hours": "08:16",
+  "dsr": "GA4 automations set up | Blog Automation Fixes",
+  "rain": false
+ },
+ {
+  "date": "2026-07-06",
+  "name": "Nikhil Sharma",
+  "in": "11:04 AM",
+  "out": "8:08 PM",
+  "hours": "08:04",
+  "dsr": "GAI Daily AI reels - 1 | William reels - 2",
+  "rain": false
+ },
+ {
+  "date": "2026-07-06",
+  "name": "Rahul Bisht",
+  "in": "11:01 AM",
+  "out": "8:11 PM",
+  "hours": "08:10",
+  "dsr": "SMM Hiring Graphics -1 | Deepak Khatri graphic - 1 | black in hr emailer",
   "rain": false
  },
  {
@@ -253,47 +316,29 @@
  },
  {
   "date": "2026-07-06",
-  "name": "Mukul Partap Singh",
-  "in": "10:49 AM",
-  "out": "8:05 PM",
-  "hours": "08:16",
-  "dsr": "GA4 automations set up | Blog Automation Fixes",
-  "rain": false
- },
- {
-  "date": "2026-07-06",
-  "name": "Rahul Bisht",
-  "in": "11:01 AM",
-  "out": "8:11 PM",
-  "hours": "08:10",
-  "dsr": "SMM Hiring Graphics -1 | Deepak Khatri graphic - 1 | black in hr emailer",
-  "rain": false
- },
- {
-  "date": "2026-07-06",
-  "name": "Nikhil Sharma",
-  "in": "11:04 AM",
-  "out": "8:08 PM",
-  "hours": "08:04",
-  "dsr": "GAI Daily AI reels - 1 | William reels - 2",
-  "rain": false
- },
- {
-  "date": "2026-07-06",
-  "name": "Madhav",
-  "in": "11:06 AM",
-  "out": "8:10 PM",
-  "hours": "08:04",
-  "dsr": "Black in hr Automation Emailer | Black in hr july theme | Black in hr Scheduling | Deepakkhatri.com Content and posting | william content | GAI briefing and rating | Smm Hiring content",
-  "rain": false
- },
- {
-  "date": "2026-07-06",
   "name": "Yash Parcha",
   "in": "11:36 AM",
   "out": "8:21 PM",
   "hours": "07:45",
   "dsr": "BLACK IN HR Reel",
+  "rain": false
+ },
+ {
+  "date": "2026-07-07",
+  "name": "Madhav",
+  "in": "11:14 AM",
+  "out": "8:40 PM",
+  "hours": "08:26",
+  "dsr": "Black in hr Automation Emailer | Black in hr Tuesday Emailer | Black in hr Scheduling | SMM hiring Website Content | Preston Content | GAI briefing and rating",
+  "rain": false
+ },
+ {
+  "date": "2026-07-07",
+  "name": "Megha Rana",
+  "in": "11:03 AM",
+  "out": "8:18 PM",
+  "hours": "08:15",
+  "dsr": "basic understanding of tools | campaign | ai prompting",
   "rain": false
  },
  {
@@ -307,20 +352,20 @@
  },
  {
   "date": "2026-07-07",
+  "name": "Nikhil Sharma",
+  "in": "11:13 AM",
+  "out": "8:32 PM",
+  "hours": "08:19",
+  "dsr": "GAI Video | Preston Reels",
+  "rain": false
+ },
+ {
+  "date": "2026-07-07",
   "name": "Rahul Bisht",
   "in": "11:00 AM",
   "out": "8:34 PM",
   "hours": "08:34",
   "dsr": "Ezra Graphics -1 | black in hr emailer | SMM Hiring Website",
-  "rain": false
- },
- {
-  "date": "2026-07-07",
-  "name": "Megha Rana",
-  "in": "11:03 AM",
-  "out": "8:18 PM",
-  "hours": "08:15",
-  "dsr": "basic understanding of tools | campaign | ai prompting",
   "rain": false
  },
  {
@@ -339,60 +384,6 @@
   "out": "8:15 PM",
   "hours": "08:02",
   "dsr": "SMM Hero Section Complete (with responsive) | GAI episode uploaded",
-  "rain": false
- },
- {
-  "date": "2026-07-07",
-  "name": "Nikhil Sharma",
-  "in": "11:13 AM",
-  "out": "8:32 PM",
-  "hours": "08:19",
-  "dsr": "GAI Video | Preston Reels",
-  "rain": false
- },
- {
-  "date": "2026-07-07",
-  "name": "Madhav",
-  "in": "11:14 AM",
-  "out": "8:40 PM",
-  "hours": "08:26",
-  "dsr": "Black in hr Automation Emailer | Black in hr Tuesday Emailer | Black in hr Scheduling | SMM hiring Website Content | Preston Content | GAI briefing and rating",
-  "rain": false
- },
- {
-  "date": "2026-07-08",
-  "name": "Saquib Khan",
-  "in": "10:44 AM",
-  "out": "7:37 PM",
-  "hours": "07:53",
-  "dsr": "COMPLETED 95% OF PPP IN HOUSE WEBAPP",
-  "rain": false
- },
- {
-  "date": "2026-07-08",
-  "name": "Utkarsh",
-  "in": "10:58 AM",
-  "out": "8:06 PM",
-  "hours": "08:08",
-  "dsr": "SMM Freelancer Landing Page complete with content and responsiveness | Business Landing Page complete with responsiveness | GAI episode uploaded",
-  "rain": false
- },
- {
-  "date": "2026-07-08",
-  "name": "Mukul Partap Singh",
-  "in": "11:00 AM",
-  "out": "8:07 PM",
-  "hours": "08:07",
-  "dsr": "Blogs Automation S99 | PPP - Daily Analytics Digest Automation",
-  "rain": false
- },
- {
-  "date": "2026-07-08",
-  "name": "Rahul Bisht",
-  "in": "11:00 AM",
-  "out": "8:13 PM",
-  "hours": "08:13",
-  "dsr": "Ezra Graphics -2 | black in hr graphics -8 | Deepak Khatri graphic - 1 | black in hr emailer",
   "rain": false
  },
  {
@@ -415,11 +406,47 @@
  },
  {
   "date": "2026-07-08",
+  "name": "Mukul Partap Singh",
+  "in": "11:00 AM",
+  "out": "8:07 PM",
+  "hours": "08:07",
+  "dsr": "Blogs Automation S99 | PPP - Daily Analytics Digest Automation",
+  "rain": false
+ },
+ {
+  "date": "2026-07-08",
   "name": "Nikhil Sharma",
   "in": "11:14 AM",
   "out": "8:19 PM",
   "hours": "08:05",
   "dsr": "Preston Reels",
+  "rain": false
+ },
+ {
+  "date": "2026-07-08",
+  "name": "Rahul Bisht",
+  "in": "11:00 AM",
+  "out": "8:13 PM",
+  "hours": "08:13",
+  "dsr": "Ezra Graphics -2 | black in hr graphics -8 | Deepak Khatri graphic - 1 | black in hr emailer",
+  "rain": false
+ },
+ {
+  "date": "2026-07-08",
+  "name": "Saquib Khan",
+  "in": "10:44 AM",
+  "out": "7:37 PM",
+  "hours": "07:53",
+  "dsr": "COMPLETED 95% OF PPP IN HOUSE WEBAPP",
+  "rain": false
+ },
+ {
+  "date": "2026-07-08",
+  "name": "Utkarsh",
+  "in": "10:58 AM",
+  "out": "8:06 PM",
+  "hours": "08:08",
+  "dsr": "SMM Freelancer Landing Page complete with content and responsiveness | Business Landing Page complete with responsiveness | GAI episode uploaded",
   "rain": false
  },
  {
@@ -433,11 +460,20 @@
  },
  {
   "date": "2026-07-09",
-  "name": "Saquib Khan",
-  "in": "10:43 AM",
-  "out": "8:21 PM",
-  "hours": "08:38",
-  "dsr": "COMPLETED PPP IN HOUSE",
+  "name": "Madhav",
+  "in": "11:02 AM",
+  "out": "8:18 PM",
+  "hours": "08:16",
+  "dsr": "Black in hr Tuesday Emailer | Black in hr Scheduling | Social 99 Posting | Deepakkhatri.com content | GAI briefing and rating | Preston Reels check",
+  "rain": false
+ },
+ {
+  "date": "2026-07-09",
+  "name": "Megha Rana",
+  "in": "11:10 AM",
+  "out": "8:22 PM",
+  "hours": "08:12",
+  "dsr": "gai live upload | thumbnail | timestamps and captions",
   "rain": false
  },
  {
@@ -451,11 +487,11 @@
  },
  {
   "date": "2026-07-09",
-  "name": "Utkarsh",
-  "in": "11:00 AM",
-  "out": "8:21 PM",
-  "hours": "08:21",
-  "dsr": "AboutUs Page Complete with responsive (SMM Hiring) | GAI episode uploading",
+  "name": "Nikhil Sharma",
+  "in": "11:09 AM",
+  "out": "8:23 PM",
+  "hours": "08:14",
+  "dsr": "Preston videos",
   "rain": false
  },
  {
@@ -469,29 +505,20 @@
  },
  {
   "date": "2026-07-09",
-  "name": "Madhav",
-  "in": "11:02 AM",
-  "out": "8:18 PM",
-  "hours": "08:16",
-  "dsr": "Black in hr Tuesday Emailer | Black in hr Scheduling | Social 99 Posting | Deepakkhatri.com content | GAI briefing and rating | Preston Reels check",
+  "name": "Saquib Khan",
+  "in": "10:43 AM",
+  "out": "8:21 PM",
+  "hours": "08:38",
+  "dsr": "COMPLETED PPP IN HOUSE",
   "rain": false
  },
  {
   "date": "2026-07-09",
-  "name": "Nikhil Sharma",
-  "in": "11:09 AM",
-  "out": "8:23 PM",
-  "hours": "08:14",
-  "dsr": "Preston videos",
-  "rain": false
- },
- {
-  "date": "2026-07-09",
-  "name": "Megha Rana",
-  "in": "11:10 AM",
-  "out": "8:22 PM",
-  "hours": "08:12",
-  "dsr": "gai live upload | thumbnail | timestamps and captions",
+  "name": "Utkarsh",
+  "in": "11:00 AM",
+  "out": "8:21 PM",
+  "hours": "08:21",
+  "dsr": "AboutUs Page Complete with responsive (SMM Hiring) | GAI episode uploading",
   "rain": false
  },
  {

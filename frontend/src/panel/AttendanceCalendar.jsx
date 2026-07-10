@@ -79,17 +79,14 @@ export default function AttendanceCalendar({ records = [], month, showName = fal
                   const ms = r.workedMs || 0;
                   const ended = r.state === "ended";
                   const name = showName ? `${(r.employee?.name || "").split(" ")[0]} · ` : "";
-                  if (r.rain) {
-                    return (
-                      <span key={r._id} className="att-pill att-rain" title={`${r.employee?.name || ""} — rain day`}>
-                        {name}🌧 Rain
-                      </span>
-                    );
-                  }
                   const c = ended ? colorClass(ms, targetMs(r)) : "att-n";
                   return (
-                    <span key={r._id} className={`att-pill ${c}`} title={`${r.employee?.name || ""} ${ended ? fmtHm(ms) : r.state}`}>
-                      {name}{ended ? fmtHm(ms) : "—"}
+                    <span
+                      key={r._id}
+                      className={`att-pill ${c}`}
+                      title={`${r.employee?.name || ""} ${ended ? fmtHm(ms) : r.state}${r.rain ? " — rain day" : ""}`}
+                    >
+                      {name}{r.rain ? "🌧 " : ""}{ended ? fmtHm(ms) : "—"}
                     </span>
                   );
                 })}
@@ -123,8 +120,7 @@ export default function AttendanceCalendar({ records = [], month, showName = fal
                     </div>
                     <div>
                       <span className="rg-label">Overtime / Short</span>
-                      {r.rain ? <span className="badge att-rain">🌧 Exempt</span>
-                        : ended && ot > 60000 ? <span style={{ color: "#15803d", fontWeight: 700 }}>+{fmtHm(ot)}</span>
+                      {ended && ot > 60000 ? <span style={{ color: "#15803d", fontWeight: 700 }}>+{fmtHm(ot)}</span>
                         : ended && ot < -60000 ? <span style={{ color: "#b91c1c", fontWeight: 700 }}>−{fmtHm(-ot)}</span>
                         : <span>—</span>}
                     </div>
