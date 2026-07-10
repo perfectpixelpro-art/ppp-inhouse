@@ -79,6 +79,9 @@ const userSchema = new mongoose.Schema(
       type: Boolean,
       default: false,
     },
+    // Password reset (admin/HR only). We store the SHA-256 hash, never the token.
+    resetTokenHash: { type: String, select: false },
+    resetTokenExpires: { type: Date, select: false },
   },
   { timestamps: true }
 );

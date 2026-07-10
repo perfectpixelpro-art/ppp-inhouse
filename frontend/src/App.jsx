@@ -2,6 +2,7 @@ import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { AuthProvider, useAuth } from "./context/AuthContext";
 import ProtectedRoute from "./components/ProtectedRoute";
 import Login from "./pages/Login";
+import ResetPassword from "./pages/ResetPassword";
 import PanelLayout from "./panel/PanelLayout";
 import { tabsForRole } from "./panel/tabsConfig";
 import EmployeeLayout from "./employee/EmployeeLayout";
@@ -48,6 +49,7 @@ export default function App() {
         <Routes>
           <Route path="/" element={<RootRedirect />} />
           <Route path="/login" element={<LoginRoute />} />
+          <Route path="/reset-password/:token" element={<ResetPassword />} />
 
           <Route
             path="/admin"

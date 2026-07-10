@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
+import client from "../api/client";
 import "./Login.css";
 
 export default function Login() {
@@ -11,6 +12,24 @@ export default function Login() {
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState("");
   const [submitting, setSubmitting] = useState(false);
+  const [notice, setNotice] = useState("");
+  const [resetting, setResetting] = useState(false);
+
+  // Self-service reset is admin/HR only; employees are told to contact HR.
+  const handleForgot = async () => {
+    setError("");
+    setNotice("");
+    if (!email.trim()) return setError("Enter your email first, then click “Forgot password?”.");
+    setResetting(true);
+    try {
+      const { data } = await client.post("/auth/forgot-password", { email: email.trim() });
+      setNotice(data.message);
+    } catch (err) {
+      setError(err.response?.data?.message || "Could not start a password reset.");
+    } finally {
+      setResetting(false);
+    }
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -72,7 +91,12 @@ export default function Login() {
             </div>
           </label>
 
+          <button type="button" className="forgot-link" onClick={handleForgot} disabled={resetting}>
+            {resetting ? "Checking…" : "Forgot password?"}
+          </button>
+
           {error && <div className="login-error">{error}</div>}
+          {notice && <div className="login-notice">{notice}</div>}
 
           <button type="submit" className="login-btn" disabled={submitting}>
             {submitting ? "Signing in…" : "Sign in"}
