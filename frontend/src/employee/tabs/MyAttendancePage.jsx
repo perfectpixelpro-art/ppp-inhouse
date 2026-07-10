@@ -4,6 +4,7 @@ import { fmtDate, fmtTime } from "../../panel/utils";
 import Modal from "../../panel/Modal";
 import AttendanceCalendar from "../../panel/AttendanceCalendar";
 import BalanceCard from "../../panel/BalanceCard";
+import LocationStamp from "../../panel/LocationStamp";
 import "./attendance.css";
 
 const HOUR = 3600000;
@@ -277,7 +278,7 @@ export default function MyAttendancePage() {
               <thead>
                 <tr>
                   <th>Date</th><th>In</th><th>Out</th><th>Worked</th>
-                  <th>Status</th><th>Overtime</th><th>Short</th><th>Daily Task</th>
+                  <th>Status</th><th>Overtime</th><th>Short</th><th>Location</th><th>Daily Task</th>
                 </tr>
               </thead>
               <tbody>
@@ -306,6 +307,7 @@ export default function MyAttendancePage() {
                       </td>
                       <td>{ot > 60000 ? <span className="delta up">+{fmtHm(ot)}</span> : "—"}</td>
                       <td>{ot < -60000 ? <span className="delta down">−{fmtHm(-ot)}</span> : "—"}</td>
+                      <td><LocationStamp loc={r.checkInLocation} /></td>
                       <td className="dsr-cell">
                         {r.dsr
                           ? <button className="dsr-link" onClick={() => setViewDsr(r)}>{r.dsr}</button>
@@ -314,7 +316,7 @@ export default function MyAttendancePage() {
                     </tr>
                   );
                 })}
-                {records.length === 0 && <tr><td colSpan={8} className="empty">No attendance yet.</td></tr>}
+                {records.length === 0 && <tr><td colSpan={9} className="empty">No attendance yet.</td></tr>}
               </tbody>
             </table>
           </div>

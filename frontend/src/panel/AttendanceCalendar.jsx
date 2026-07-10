@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { fmtDate, fmtTime } from "./utils";
 import Modal from "./Modal";
+import LocationStamp from "./LocationStamp";
 
 const DOW = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 const HOUR = 3600000;
@@ -127,6 +128,12 @@ export default function AttendanceCalendar({ records = [], month, showName = fal
                         : <span>—</span>}
                     </div>
                   </div>
+                  {r.checkInLocation?.lat != null && (
+                    <div className="ddc-breaks" style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                      <span className="rg-label">Checked in {fmtTime(r.checkIn)} from</span>
+                      <LocationStamp loc={r.checkInLocation} showDevice />
+                    </div>
+                  )}
                   {r.breaks?.length > 0 && (
                     <div className="ddc-breaks">Breaks: {r.breaks.map((b) => b.type).join(", ")}</div>
                   )}

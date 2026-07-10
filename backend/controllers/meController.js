@@ -4,6 +4,29 @@ import User from "../models/User.js";
 import { applyHardStop } from "../services/attendanceHardStop.js";
 import { computeLeaveDeduction } from "../services/leaveDeduction.js";
 import { sendMail, staffEmails } from "../services/mail.js";
+import { isMacUserAgent, distanceFromOffice } from "../services/geo.js";
+
+// In/Out is macOS-only (all office machines are Macs). A phone/tablet using
+// "Request Desktop Website" sends a Mac UA but still reports touch support —
+// those must send a location, which we stamp onto the day's record.
+const requireMac = (req, res) => {
+  if (isMacUserAgent(req.headers["user-agent"] || "")) return true;
+  res.status(403).json({ code: "mac_only", message: "In / Out can only be used from an office Mac." });
+  return false;
+};
+
+const buildStamp = (req) => {
+  const { touch, lat, lng, accuracy, deviceKind } = req.body;
+  if (!touch) return null; // a real Mac — no location prompt
+  if (typeof lat !== "number" || typeof lng !== "number") return "missing";
+  return {
+    lat,
+    lng,
+    accuracy,
+    distanceM: distanceFromOffice(lat, lng),
+    deviceKind: deviceKind || "Touch device (desktop mode)",
+  };
+};
 
 const todayYMD = () => new Date().toISOString().slice(0, 10);
 const fmt = (d) => new Date(d).toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" });
@@ -73,6 +96,12 @@ export const myToday = async (req, res) => {
 
 // POST /api/me/attendance/checkin  { dayType? }  — start or resume the work timer
 export const checkIn = async (req, res) => {
+  if (!requireMac(req, res)) return;
+  const stamp = buildStamp(req);
+  if (stamp === "missing") {
+    return res.status(400).json({ code: "location_required", message: "Location is required to check in from this device." });
+  }
+
   const date = todayYMD();
   const now = new Date();
   let record = await Attendance.findOne({ employee: req.user._id, date });
@@ -86,6 +115,7 @@ export const checkIn = async (req, res) => {
       checkIn: now,
       currentStart: now,
       state: "working",
+      ...(stamp ? { checkInLocation: stamp } : {}),
     });
     return res.status(201).json(record);
   }
@@ -110,13 +140,17 @@ export const checkIn = async (req, res) => {
 
   record.currentStart = now;
   record.state = "working";
-  if (!record.checkIn) record.checkIn = now;
+  if (!record.checkIn) {
+    record.checkIn = now;
+    if (stamp) record.checkInLocation = stamp; // stamp the day's first check-in only
+  }
   await record.save();
   res.json(record);
 };
 
 // POST /api/me/attendance/checkout  { mode: 'lunch' | 'break' | 'end' }
 export const checkOut = async (req, res) => {
+  if (!requireMac(req, res)) return;
   const { mode } = req.body;
   if (!["lunch", "break", "end"].includes(mode)) {
     return res.status(400).json({ message: "mode must be lunch, break or end" });

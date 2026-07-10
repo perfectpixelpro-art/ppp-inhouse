@@ -5,6 +5,7 @@ import Avatar from "../Avatar";
 import Modal from "../Modal";
 import AttendanceCalendar from "../AttendanceCalendar";
 import BalanceCard from "../BalanceCard";
+import LocationStamp from "../LocationStamp";
 import { monthlySummary, SHORT_RATE } from "../payroll";
 
 const HOUR = 3600000;
@@ -110,7 +111,7 @@ export default function AttendancePage() {
             <thead>
               <tr>
                 <th>Employee</th><th>Date</th><th>Day</th><th>In</th><th>Out</th>
-                <th>Worked</th><th>Overtime</th><th>Short</th><th>Status</th><th>Daily Task</th>
+                <th>Worked</th><th>Overtime</th><th>Short</th><th>Status</th><th>Location</th><th>Daily Task</th>
               </tr>
             </thead>
             <tbody>
@@ -137,13 +138,14 @@ export default function AttendancePage() {
                       <span className={`badge ${r.state === "ended" ? "badge-approved" : "badge-pending"}`}>{r.state}</span>
                       {r.rain && <span className="badge att-rain" style={{ marginLeft: 4 }}>🌧 Rain</span>}
                     </td>
+                    <td><LocationStamp loc={r.checkInLocation} showDevice /></td>
                     <td style={{ maxWidth: 240, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }} title={r.dsr || ""}>
                       {r.dsr || "—"}
                     </td>
                   </tr>
                 );
               })}
-              {rows.length === 0 && <tr><td colSpan={10} className="empty">No attendance for this month.</td></tr>}
+              {rows.length === 0 && <tr><td colSpan={11} className="empty">No attendance for this month.</td></tr>}
             </tbody>
           </table>
         </div>

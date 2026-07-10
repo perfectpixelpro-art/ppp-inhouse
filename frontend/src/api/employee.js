@@ -1,9 +1,17 @@
 import client from "./client";
+import { isTouchDevice, deviceKind, getLocation } from "./device";
 
 // Attendance (self)
 export const myAttendance = () => client.get("/me/attendance").then((r) => r.data);
 export const myToday = () => client.get("/me/attendance/today").then((r) => r.data);
-export const checkIn = (dayType) => client.post("/me/attendance/checkin", dayType ? { dayType } : {}).then((r) => r.data);
+// Touch devices (phone/tablet in desktop mode) must attach a location; Macs don't.
+export const checkIn = async (dayType) => {
+  const body = dayType ? { dayType } : {};
+  if (isTouchDevice()) {
+    Object.assign(body, await getLocation(), { touch: true, deviceKind: deviceKind() });
+  }
+  return client.post("/me/attendance/checkin", body).then((r) => r.data);
+};
 export const checkOut = (mode) => client.post("/me/attendance/checkout", { mode }).then((r) => r.data);
 export const saveDsr = (dsr) => client.post("/me/attendance/dsr", { dsr }).then((r) => r.data);
 export const markRain = (rain) => client.post("/me/attendance/rain", { rain }).then((r) => r.data);
