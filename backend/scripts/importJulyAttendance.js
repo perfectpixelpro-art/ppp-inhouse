@@ -43,22 +43,25 @@ const hoursToMs = (s) => {
 const run = async () => {
   await connectDB();
 
-  // 1. Ensure every employee exists
+  // 1. Ensure every employee exists. Match on email first — it's the unique key,
+  // and an existing account may be stored under a slightly different name.
   const names = [...new Set(rows.map((r) => r.name))].sort();
   const userByName = {};
   for (const name of names) {
-    let user = await User.findOne({ name });
+    const email = emailFor(name);
+    let user = await User.findOne({ $or: [{ email }, { name }] });
     if (!user) {
       user = await User.create({
         name,
-        email: emailFor(name),
+        email,
         password: TEMP_PASSWORD,
         role: "employee",
         profileCompleted: false, // they complete photo/birthdate on first login
       });
       console.log(`+ created ${name} <${user.email}>`);
     } else {
-      console.log(`= exists  ${name} <${user.email}>`);
+      const note = user.name === name ? "" : `  (matched existing name "${user.name}")`;
+      console.log(`= exists  ${name} <${user.email}>${note}`);
     }
     userByName[name] = user;
   }
