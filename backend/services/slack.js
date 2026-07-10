@@ -54,6 +54,25 @@ export const postShiftCheck = async ({ employee, attendance }) => {
   return r.json();
 };
 
+// Post a plain message to a channel (defaults to the main HR/admin one).
+// Fire-and-forget — never blocks the request; failures are logged, not thrown.
+export const postToChannel = async (text, channelId) => {
+  const token = process.env.SLACK_BOT_TOKEN;
+  const channel = channelId || process.env.SLACK_CHANNEL_ID;
+  if (!token || !channel) return console.warn("[slack] not configured — skipping:", text);
+  try {
+    const r = await fetch(`${SLACK_API}/chat.postMessage`, {
+      method: "POST",
+      headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
+      body: JSON.stringify({ channel, text }),
+    });
+    const data = await r.json();
+    if (!data.ok) console.error("[slack] postMessage failed:", data.error);
+  } catch (e) {
+    console.error("[slack] postMessage error:", e.message);
+  }
+};
+
 // Verify the request genuinely came from Slack (signing-secret HMAC + replay guard).
 export const verifySlackSignature = (req) => {
   const secret = process.env.SLACK_SIGNING_SECRET;

@@ -5,6 +5,20 @@ import { applyHardStop } from "../services/attendanceHardStop.js";
 import { computeLeaveDeduction } from "../services/leaveDeduction.js";
 import { sendMail, staffEmails } from "../services/mail.js";
 import { isMacUserAgent, distanceFromOffice } from "../services/geo.js";
+import { postToChannel } from "../services/slack.js";
+
+const fmtTimeIST = (d) =>
+  new Date(d).toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit", timeZone: "Asia/Kolkata" });
+
+// Short-break notices go to their own Slack channel, not the shift-check one.
+const breakChannel = () => process.env.SLACK_BREAK_CHANNEL_ID;
+
+const fmtDur = (ms) => {
+  const m = Math.round(ms / 60000);
+  const h = Math.floor(m / 60);
+  const mm = m % 60;
+  return h ? (mm ? `${h}h ${mm}m` : `${h}h`) : `${mm}m`;
+};
 
 // In/Out is macOS-only (all office machines are Macs). A phone/tablet using
 // "Request Desktop Website" sends a Mac UA but still reports touch support —
@@ -136,7 +150,11 @@ export const checkIn = async (req, res) => {
 
   // Resuming from lunch or a short break — close the open break
   const lastBreak = record.breaks[record.breaks.length - 1];
-  if (lastBreak && !lastBreak.end) lastBreak.end = now;
+  let resumedBreakMs = null;
+  if (lastBreak && !lastBreak.end) {
+    lastBreak.end = now;
+    if (lastBreak.type === "break") resumedBreakMs = now - new Date(lastBreak.start);
+  }
 
   record.currentStart = now;
   record.state = "working";
@@ -145,6 +163,14 @@ export const checkIn = async (req, res) => {
     if (stamp) record.checkInLocation = stamp; // stamp the day's first check-in only
   }
   await record.save();
+
+  if (resumedBreakMs != null) {
+    postToChannel(
+      `:back: *${req.user.name}* is back from a short break at *${fmtTimeIST(now)}* — away ${fmtDur(resumedBreakMs)}`,
+      breakChannel()
+    );
+  }
+
   res.json(record);
 };
 
@@ -180,6 +206,12 @@ export const checkOut = async (req, res) => {
     record.breaks.push({ type: mode === "lunch" ? "lunch" : "break", start: now });
   }
   await record.save();
+
+  // Tell HR/admin in Slack when someone steps away on a short break
+  if (mode === "break") {
+    postToChannel(`:coffee: *${req.user.name}* started a short break at *${fmtTimeIST(now)}*`, breakChannel());
+  }
+
   res.json(record);
 };
 
