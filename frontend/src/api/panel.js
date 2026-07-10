@@ -7,6 +7,11 @@ export const uploadFile = (file) => {
   return client.post("/uploads", fd).then((r) => r.data);
 };
 
+// Notices / announcements (admin/hr)
+export const fetchNotices = () => client.get("/notices").then((r) => r.data);
+export const createNotice = (data) => client.post("/notices", data).then((r) => r.data);
+export const deleteNotice = (id) => client.delete(`/notices/${id}`).then((r) => r.data);
+
 // Employees
 export const fetchEmployees = (params) => client.get("/employees", { params }).then((r) => r.data);
 export const createEmployee = (data) => client.post("/employees", data).then((r) => r.data);

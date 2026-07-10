@@ -3,6 +3,7 @@ import { useState } from "react";
 import { useAuth } from "../context/AuthContext";
 import Avatar from "../panel/Avatar";
 import CompleteProfile from "./CompleteProfile";
+import NoticePopup from "./NoticePopup";
 import "../panel/panel.css";
 import logo from "../../public/logo.png"
 
@@ -68,6 +69,7 @@ export default function EmployeeLayout() {
           <Outlet />
         </main>
       </div>
+      <NoticePopup />
     </div>
   );
 }

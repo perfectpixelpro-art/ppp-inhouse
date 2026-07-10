@@ -61,6 +61,7 @@ export default function MyAttendancePage() {
   const [dsrText, setDsrText] = useState("");
   const [viewDsr, setViewDsr] = useState(null);
   const [histView, setHistView] = useState("table");
+  const [confirmEnd, setConfirmEnd] = useState(false);
   const tick = useRef(null);
 
   const refreshHistory = () => myAttendance().then(setRecords);
@@ -230,7 +231,7 @@ export default function MyAttendancePage() {
                     <button className="btn opt-lunch" disabled={busy} onClick={() => act(() => checkOut("lunch"))}>🍽 Lunch</button>
                   )}
                   <button className="btn opt-break" disabled={busy} onClick={() => act(() => checkOut("break"))}>☕ Short Break</button>
-                  <button className="btn opt-end" disabled={busy} onClick={endDay}>🏁 End of Day</button>
+                  <button className="btn opt-end" disabled={busy} onClick={() => { setShowOptions(false); setConfirmEnd(true); }}>🏁 End of Day</button>
                   <button className="btn btn-ghost btn-sm" onClick={() => setShowOptions(false)}>Cancel</button>
                 </div>
               )}
@@ -246,14 +247,14 @@ export default function MyAttendancePage() {
             </div>
           </div>
 
-          <label className="rain-toggle" title="Mark today as a rain day — HR is notified and no auto-deduction applies">
+          <label className="rain-toggle" title="Tick before checking in — HR is notified and no auto-deduction applies">
             <input
               type="checkbox"
               checked={!!today?.rain}
-              disabled={busy}
+              disabled={busy || state !== "not_started"}
               onChange={(e) => toggleRain(e.target.checked)}
             />
-            🌧 Mark today as a rain day
+            🌧 Mark today as a rain day {state === "not_started" ? "(before check-in)" : ""}
             {today?.rain && <span className="badge badge-neutral" style={{ marginLeft: 6 }}>Rain — HR notified</span>}
           </label>
 
@@ -316,6 +317,26 @@ export default function MyAttendancePage() {
           </div>
           )}
         </>
+      )}
+
+      {confirmEnd && (
+        <Modal
+          title="End your shift?"
+          onClose={() => setConfirmEnd(false)}
+          footer={
+            <>
+              <button className="btn btn-ghost" onClick={() => setConfirmEnd(false)}>No, keep working</button>
+              <button className="btn btn-primary" disabled={busy} onClick={async () => { setConfirmEnd(false); await endDay(); }}>
+                {busy ? "Ending…" : "Yes, end shift"}
+              </button>
+            </>
+          }
+        >
+          <p style={{ margin: 0 }}>
+            Are you sure you want to end your shift? Your timer stops and today's record is closed —
+            you can still fill your daily report afterwards.
+          </p>
+        </Modal>
       )}
 
       {dsrModal && (

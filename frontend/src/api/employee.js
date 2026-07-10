@@ -23,6 +23,10 @@ export const fetchHolidays = (params) => client.get("/holidays", { params }).the
 // Company policy (read-only)
 export const fetchPolicy = () => client.get("/policy").then((r) => r.data);
 
+// Notices for me + acknowledge
+export const fetchMyNotices = () => client.get("/notices/mine").then((r) => r.data);
+export const ackNotice = (id, note) => client.post(`/notices/${id}/ack`, { note }).then((r) => r.data);
+
 // Image upload — returns { url }
 export const uploadFile = (file) => {
   const fd = new FormData();

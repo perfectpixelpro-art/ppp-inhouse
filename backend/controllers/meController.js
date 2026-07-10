@@ -99,6 +99,11 @@ export const checkIn = async (req, res) => {
     return res.status(400).json({ message: "Your day has already ended (8:30 PM cap)" });
   }
 
+  // First check-in of a record pre-created by "mark rain" — apply the chosen day type
+  if (record.state === "not_started") {
+    record.dayType = req.body.dayType === "half" ? "half" : "full";
+  }
+
   // Resuming from lunch or a short break — close the open break
   const lastBreak = record.breaks[record.breaks.length - 1];
   if (lastBreak && !lastBreak.end) lastBreak.end = now;
@@ -158,6 +163,10 @@ export const saveDsr = async (req, res) => {
 export const markRain = async (req, res) => {
   const date = todayYMD();
   const rain = req.body.rain !== false;
+  const existing = await Attendance.findOne({ employee: req.user._id, date });
+  if (existing && existing.checkIn) {
+    return res.status(400).json({ message: "Rain can only be marked before checking in" });
+  }
   const record = await Attendance.findOneAndUpdate(
     { employee: req.user._id, date },
     { $set: { rain } },

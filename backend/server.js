@@ -15,6 +15,7 @@ import slackRoutes from "./routes/slackRoutes.js";
 import googleRoutes from "./routes/googleRoutes.js";
 import uploadRoutes from "./routes/uploadRoutes.js";
 import policyRoutes from "./routes/policyRoutes.js";
+import noticeRoutes from "./routes/noticeRoutes.js";
 import { UPLOAD_DIR } from "./middleware/upload.js";
 import { startScheduler } from "./scheduler.js";
 
@@ -48,6 +49,7 @@ app.use("/", slackRoutes);
 app.use("/api/google", googleRoutes);
 app.use("/api/uploads", uploadRoutes);
 app.use("/api/policy", policyRoutes);
+app.use("/api/notices", noticeRoutes);
 
 // Serve uploaded images
 app.use("/uploads", express.static(UPLOAD_DIR));

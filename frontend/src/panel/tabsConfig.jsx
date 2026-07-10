@@ -11,6 +11,7 @@ import DocumentsPage from "./tabs/DocumentsPage";
 import BirthdaysPage from "./tabs/BirthdaysPage";
 import PolicyEditPage from "./tabs/PolicyEditPage";
 import GalleryManagePage from "./tabs/GalleryManagePage";
+import NoticesPage from "./tabs/NoticesPage";
 
 // Single source of truth for both the sidebar nav and the router.
 // `roles` controls which panels a tab appears in. Financial tabs
@@ -28,6 +29,7 @@ export const TABS = [
   { to: "documents", label: "Documents", icon: "📁", roles: ["admin", "hr"], element: <DocumentsPage /> },
   { to: "policy", label: "Policy", icon: "📜", roles: ["admin", "hr"], element: <PolicyEditPage /> },
   { to: "gallery", label: "Gallery", icon: "🖼️", roles: ["admin", "hr"], element: <GalleryManagePage /> },
+  { to: "notices", label: "Notices", icon: "📢", roles: ["admin", "hr"], element: <NoticesPage /> },
   { to: "birthdays", label: "Birthdays", icon: "🎂", roles: ["admin", "hr"], element: <BirthdaysPage /> },
 ];
 
