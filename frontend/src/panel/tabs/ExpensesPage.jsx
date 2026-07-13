@@ -4,7 +4,7 @@ import { inr, fmtDate, thisMonth, monthLabel } from "../utils";
 import Modal from "../Modal";
 
 const CATEGORIES = ["salary", "office", "travel", "utilities", "equipment", "marketing", "other"];
-const blank = { title: "", amount: "", category: "office", date: "", note: "" };
+const blank = { title: "", amount: "", category: "office", date: "", note: "", paidBy: "" };
 
 export default function ExpensesPage() {
   const [expenses, setExpenses] = useState([]);
@@ -15,6 +15,7 @@ export default function ExpensesPage() {
   const [form, setForm] = useState(blank);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
+  const [detail, setDetail] = useState(null); // expense being viewed
 
   const load = () => {
     setLoading(true);
@@ -79,19 +80,20 @@ export default function ExpensesPage() {
       ) : (
         <div className="table-wrap">
           <table className="data">
-            <thead><tr><th>Title</th><th>Category</th><th>Date</th><th>Added by</th><th style={{ textAlign: "right" }}>Amount</th><th></th></tr></thead>
+            <thead><tr><th>Title</th><th>Category</th><th>Reason</th><th>Paid by</th><th>Date</th><th style={{ textAlign: "right" }}>Amount</th><th></th></tr></thead>
             <tbody>
               {expenses.map((x) => (
-                <tr key={x._id}>
-                  <td className="p-name">{x.title}</td>
+                <tr key={x._id} style={{ cursor: "pointer" }} onClick={() => setDetail(x)}>
+                  <td className="p-name" style={{ textDecoration: "underline dotted" }}>{x.title}</td>
                   <td><span className="badge badge-neutral">{x.category}</span></td>
+                  <td style={{ maxWidth: 220, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }} title={x.note || ""}>{x.note || "—"}</td>
+                  <td>{x.paidBy || x.addedBy?.name || "—"}</td>
                   <td>{fmtDate(x.date)}</td>
-                  <td>{x.addedBy?.name || "—"}</td>
                   <td style={{ textAlign: "right", fontWeight: 700 }}>{inr(x.amount)}</td>
-                  <td><button className="btn btn-danger btn-sm" onClick={() => remove(x)}>Delete</button></td>
+                  <td><button className="btn btn-danger btn-sm" onClick={(e) => { e.stopPropagation(); remove(x); }}>Delete</button></td>
                 </tr>
               ))}
-              {expenses.length === 0 && <tr><td colSpan={6} className="empty">No expenses this month.</td></tr>}
+              {expenses.length === 0 && <tr><td colSpan={7} className="empty">No expenses this month.</td></tr>}
             </tbody>
           </table>
         </div>
@@ -128,11 +130,28 @@ export default function ExpensesPage() {
               <label>Date</label>
               <input type="date" value={form.date} onChange={set("date")} />
             </div>
+            <div className="form-field">
+              <label>Paid by</label>
+              <input value={form.paidBy} onChange={set("paidBy")} placeholder="Who paid — e.g. Deepak, petty cash" />
+            </div>
             <div className="form-field full">
-              <label>Note</label>
-              <input value={form.note} onChange={set("note")} />
+              <label>Reason</label>
+              <input value={form.note} onChange={set("note")} placeholder="Why this expense was made" />
             </div>
           </form>
+        </Modal>
+      )}
+
+      {detail && (
+        <Modal title={detail.title} onClose={() => setDetail(null)}>
+          <div className="review-grid">
+            <div><span className="rg-label">Amount</span><span style={{ fontWeight: 700 }}>{inr(detail.amount)}</span></div>
+            <div><span className="rg-label">Category</span><span style={{ textTransform: "capitalize" }}>{detail.category}</span></div>
+            <div><span className="rg-label">Date</span><span>{fmtDate(detail.date)}</span></div>
+            <div><span className="rg-label">Paid by</span><span>{detail.paidBy || detail.addedBy?.name || "—"}</span></div>
+            <div className="full"><span className="rg-label">Reason</span><span>{detail.note || "—"}</span></div>
+            <div className="full"><span className="rg-label">Added by</span><span>{detail.addedBy?.name || "—"} · {fmtDate(detail.createdAt)}</span></div>
+          </div>
         </Modal>
       )}
     </div>

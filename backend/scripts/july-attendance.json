@@ -529,5 +529,77 @@
   "hours": "08:04",
   "dsr": "Black In HR Video | Social99 (in progress)",
   "rain": false
+ },
+ {
+  "date": "2026-07-10",
+  "name": "Madhav",
+  "in": "11:13 AM",
+  "out": "8:46 PM",
+  "hours": "08:33",
+  "dsr": "",
+  "rain": false
+ },
+ {
+  "date": "2026-07-10",
+  "name": "Megha Rana",
+  "in": "11:03 AM",
+  "out": "8:21 PM",
+  "hours": "08:18",
+  "dsr": "",
+  "rain": false
+ },
+ {
+  "date": "2026-07-10",
+  "name": "Mukul Partap Singh",
+  "in": "11:01 AM",
+  "out": "8:23 PM",
+  "hours": "08:22",
+  "dsr": "",
+  "rain": false
+ },
+ {
+  "date": "2026-07-10",
+  "name": "Nikhil Sharma",
+  "in": "11:28 AM",
+  "out": "8:24 PM",
+  "hours": "07:56",
+  "dsr": "",
+  "rain": false
+ },
+ {
+  "date": "2026-07-10",
+  "name": "Rahul Bisht",
+  "in": "11:01 AM",
+  "out": "8:45 PM",
+  "hours": "08:44",
+  "dsr": "",
+  "rain": false
+ },
+ {
+  "date": "2026-07-10",
+  "name": "Saquib Khan",
+  "in": "10:38 AM",
+  "out": "8:43 PM",
+  "hours": "09:05",
+  "dsr": "",
+  "rain": false
+ },
+ {
+  "date": "2026-07-10",
+  "name": "Utkarsh",
+  "in": "11:12 AM",
+  "out": "8:43 PM",
+  "hours": "08:31",
+  "dsr": "",
+  "rain": false
+ },
+ {
+  "date": "2026-07-10",
+  "name": "Yash Parcha",
+  "in": "11:51 AM",
+  "out": "8:45 PM",
+  "hours": "07:54",
+  "dsr": "",
+  "rain": false
  }
 ]

@@ -20,7 +20,8 @@ const expenseSchema = new mongoose.Schema(
     },
     amount: { type: Number, required: true, min: 0 },
     date: { type: Date, default: Date.now },
-    note: { type: String, default: "", trim: true },
+    note: { type: String, default: "", trim: true }, // reason for the expense
+    paidBy: { type: String, default: "", trim: true }, // who actually paid (free text)
     addedBy: { type: mongoose.Schema.Types.ObjectId, ref: "User" },
   },
   { timestamps: true }

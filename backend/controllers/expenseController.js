@@ -28,6 +28,7 @@ export const createExpense = async (req, res) => {
     category: req.body.category || "other",
     date: req.body.date || Date.now(),
     note: req.body.note,
+    paidBy: req.body.paidBy,
     addedBy: req.user._id,
   });
   res.status(201).json(await expense.populate("addedBy", "name"));
