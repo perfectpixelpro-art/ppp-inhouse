@@ -2,6 +2,7 @@ import Attendance from "../models/Attendance.js";
 import Leave from "../models/Leave.js";
 import User from "../models/User.js";
 import { applyHardStop } from "../services/attendanceHardStop.js";
+import { applyLunchStop, lunchEndInstant } from "../services/attendanceLunch.js";
 import { computeLeaveDeduction } from "../services/leaveDeduction.js";
 import { sendMail, staffEmails } from "../services/mail.js";
 import { isMacUserAgent, distanceFromOffice } from "../services/geo.js";
@@ -95,7 +96,7 @@ export const myAttendance = async (req, res) => {
   const records = await Attendance.find({ employee: req.user._id }).sort({ date: -1 });
   const today = todayYMD();
   for (const r of records) {
-    if (r.date === today) await applyHardStop(r);
+    if (r.date === today) { await applyLunchStop(r); await applyHardStop(r); }
     else await finalizeIfStale(r);
   }
   res.json(records);
@@ -104,7 +105,10 @@ export const myAttendance = async (req, res) => {
 // GET /api/me/attendance/today  — the live record for today (8:30 PM cap applied)
 export const myToday = async (req, res) => {
   const record = await Attendance.findOne({ employee: req.user._id, date: todayYMD() });
-  if (record) await applyHardStop(record);
+  if (record) {
+    await applyLunchStop(record); // 2 PM auto-lunch
+    await applyHardStop(record); // 8:30 PM cap
+  }
   res.json(record || null);
 };
 
@@ -134,6 +138,7 @@ export const checkIn = async (req, res) => {
     return res.status(201).json(record);
   }
 
+  await applyLunchStop(record); // 2 PM auto-lunch (may flip working → on_lunch)
   await applyHardStop(record); // may close the day if it's past 8:30 PM
 
   if (record.state === "working") {
@@ -141,6 +146,10 @@ export const checkIn = async (req, res) => {
   }
   if (record.state === "ended") {
     return res.status(400).json({ message: "Your day has already ended (8:30 PM cap)" });
+  }
+  // Lunch is a fixed 2–3 PM window — no resuming until 3 PM
+  if (record.state === "on_lunch" && Date.now() < lunchEndInstant(record.date).getTime()) {
+    return res.status(400).json({ code: "lunch_locked", message: "Lunch break — you can resume after 3:00 PM." });
   }
 
   // First check-in of a record pre-created by "mark rain" — apply the chosen day type

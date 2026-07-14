@@ -157,6 +157,9 @@ export default function MyAttendancePage() {
   const remaining = Math.max(0, target - worked);
   const running = state === "working";
   const onBreak = state === "on_lunch" || state === "on_break";
+  // Lunch is a fixed 2–3 PM window — resume is locked until 3 PM IST
+  const istHour = Number(new Date().toLocaleString("en-US", { timeZone: "Asia/Kolkata", hour: "2-digit", hour12: false }));
+  const lunchLocked = state === "on_lunch" && istHour < 15;
 
   return (
     <div>
@@ -216,9 +219,12 @@ export default function MyAttendancePage() {
               )}
 
               {onBreak && (
-                <button className="btn-big btn-in" disabled={busy} onClick={() => act(() => checkIn())}>
-                  Resume (Check In)
-                </button>
+                <div className="daytype-choice">
+                  {state === "on_lunch" && <span className="checkout-title">🍽 Lunch break · 2–3 PM</span>}
+                  <button className="btn-big btn-in" disabled={busy || lunchLocked} onClick={() => act(() => checkIn())}>
+                    {lunchLocked ? "Resume at 3:00 PM" : "Resume (Check In)"}
+                  </button>
+                </div>
               )}
 
               {running && !showOptions && (

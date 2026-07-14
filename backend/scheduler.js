@@ -2,6 +2,7 @@ import cron from "node-cron";
 import Attendance from "./models/Attendance.js";
 import User from "./models/User.js";
 import { hardStopAll } from "./services/attendanceHardStop.js";
+import { lunchStopAll } from "./services/attendanceLunch.js";
 import { postShiftCheck } from "./services/slack.js";
 import { syncMonth } from "./controllers/googleController.js";
 import { isAuthorized } from "./services/googleSheets.js";
@@ -51,6 +52,20 @@ export const startScheduler = () => {
   cron.schedule("15 20 * * *", sendShiftReminders, IST); // 8:15 PM
   cron.schedule("20 20 * * *", sendShiftReminders, IST); // 8:20 PM
   cron.schedule("25 20 * * *", sendShiftReminders, IST); // 8:25 PM
+
+  // 2:00 PM — auto-pause open full-day timers for lunch
+  cron.schedule(
+    "0 14 * * *",
+    async () => {
+      try {
+        const paused = await lunchStopAll();
+        console.log(`[scheduler] 2 PM lunch — paused ${paused} timer(s)`);
+      } catch (err) {
+        console.error("[scheduler] lunch stop failed:", err.message);
+      }
+    },
+    IST
+  );
 
   // 8:30 PM — force-close any open full-day shift (final backstop)
   cron.schedule(
