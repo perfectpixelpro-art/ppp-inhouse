@@ -1,4 +1,4 @@
-import { netBalanceMs, targetMsFor } from "./payroll";
+import { netBalanceMs, overtimeMs } from "./payroll";
 
 const fmtHm = (ms) => {
   const m = Math.round(Math.abs(ms) / 60000);
@@ -14,7 +14,7 @@ export default function BalanceCard({ records = [], label = "Overall balance" })
   let over = 0;
   let short = 0;
   for (const r of done) {
-    const d = (r.workedMs || 0) - targetMsFor(r);
+    const d = overtimeMs(r);
     if (d > 0) over += d;
     else short += -d;
   }

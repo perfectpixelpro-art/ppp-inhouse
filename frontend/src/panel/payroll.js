@@ -21,12 +21,27 @@ export function workingDaysInMonth(year, month0, holidaySet = new Set()) {
   return count;
 }
 
+export const targetMsFor = (r) => (r.dayType === "half" ? 4 : 8) * HOUR;
+
+// A full day always excludes 1 hour of lunch. If the employee actually paused for
+// lunch, the timer already excluded it (and a "lunch" break is on the record). If
+// they never stopped the timer for lunch, we deduct that hour here so it can't
+// count as overtime. Half days have no lunch.
+const LUNCH_MS = HOUR;
+export const tookLunch = (r) => (r.breaks || []).some((b) => b.type === "lunch");
+export const lunchDeductMs = (r) => (r.dayType !== "half" && !tookLunch(r) ? LUNCH_MS : 0);
+
+// Worked time that counts toward overtime/short (raw worked minus any un-taken
+// lunch). The "Worked" column still shows raw workedMs — only overtime uses this.
+export const chargeableMs = (r) => Math.max(0, (r.workedMs || 0) - lunchDeductMs(r));
+export const overtimeMs = (r) => chargeableMs(r) - targetMsFor(r); // + overtime, − short
+
 // records: this employee's attendance for the month. Returns hours + money.
 // Rain days are flagged for HR's information but count like any other working day.
 export function monthlySummary(year, month0, records, holidaySet = new Set()) {
   const workingDays = workingDaysInMonth(year, month0, holidaySet);
   const baseMs = workingDays * 8 * HOUR;
-  const workedMs = records.reduce((s, r) => s + (r.workedMs || 0), 0);
+  const workedMs = records.reduce((s, r) => s + chargeableMs(r), 0); // lunch excluded
   const diffMs = workedMs - baseMs; // + overtime, − short
   const shortHours = diffMs < 0 ? -diffMs / HOUR : 0;
   const deduction = Math.round(shortHours * SHORT_RATE);
@@ -35,11 +50,8 @@ export function monthlySummary(year, month0, records, holidaySet = new Set()) {
 
 // Net overtime (+) or shortfall (−) across finished days, in ms.
 // Rain days count like any other day; only unfinished days are left out.
-export const targetMsFor = (r) => (r.dayType === "half" ? 4 : 8) * HOUR;
 export function netBalanceMs(records = []) {
-  return records
-    .filter((r) => r.state === "ended")
-    .reduce((sum, r) => sum + ((r.workedMs || 0) - targetMsFor(r)), 0);
+  return records.filter((r) => r.state === "ended").reduce((sum, r) => sum + overtimeMs(r), 0);
 }
 
 // self-check: node src/panel/payroll.js
@@ -53,21 +65,31 @@ if (typeof process !== "undefined" && process.argv?.[1] && import.meta.url === `
   eq(wd, 25, "July 2026 working days");
   // one holiday on Wed 2026-07-08 → 24
   eq(workingDaysInMonth(2026, 6, new Set(["2026-07-08"])), 24, "with 1 holiday");
-  // deduction: base 25*8=200h; worked 190h → short 10h → ₹2000
-  const s = monthlySummary(2026, 6, [{ workedMs: 190 * HOUR }], new Set());
+  // deduction: base 25*8=200h; worked 190h (lunch already taken) → short 10h → ₹2000
+  const L = [{ type: "lunch" }];
+  const s = monthlySummary(2026, 6, [{ workedMs: 190 * HOUR, breaks: L }], new Set());
   eq(s.deduction, 2000, "short 10h deduction");
-  const s2 = monthlySummary(2026, 6, [{ workedMs: 210 * HOUR }], new Set());
+  const s2 = monthlySummary(2026, 6, [{ workedMs: 210 * HOUR, breaks: L }], new Set());
   eq(s2.deduction, 0, "overtime no deduction");
   // a rain day does NOT change the base: still 25 working days (200h); worked 190h → ₹2000
-  const s3 = monthlySummary(2026, 6, [{ workedMs: 190 * HOUR, rain: true, date: "2026-07-06" }], new Set());
+  const s3 = monthlySummary(2026, 6, [{ workedMs: 190 * HOUR, rain: true, breaks: L }], new Set());
   eq(s3.deduction, 2000, "rain day counts like a normal day");
-  // net balance: +1h, −2h, rain day −8h all count; unfinished day ignored → net −9h
+  // lunch: full day, no lunch break, worked 9h → chargeable 8h → overtime 0
+  const lunchBreak = [{ type: "lunch" }];
+  eq(overtimeMs({ state: "ended", workedMs: 9 * HOUR }), 0, "9h no-lunch → 0 overtime");
+  // full day that DID take lunch: worked 8h with a lunch break → chargeable 8h → 0
+  eq(overtimeMs({ state: "ended", workedMs: 8 * HOUR, breaks: lunchBreak }), 0, "8h with lunch → 0");
+  // worked 9h and took lunch (imported/live) → +1h overtime, no extra deduction
+  eq(overtimeMs({ state: "ended", workedMs: 9 * HOUR, breaks: lunchBreak }), 1 * HOUR, "9h with lunch → +1h");
+  // half day: 4h target, no lunch deduction
+  eq(overtimeMs({ state: "ended", workedMs: 4 * HOUR, dayType: "half" }), 0, "half day 4h → 0");
+
+  // net balance: 9h(no lunch→8 chargeable, 0), 6h(no lunch→5, −3h), unfinished skipped → −3h
   const recs = [
     { state: "ended", workedMs: 9 * HOUR },
     { state: "ended", workedMs: 6 * HOUR },
-    { state: "ended", workedMs: 0, rain: true },
     { state: "working", workedMs: 3 * HOUR },
   ];
-  eq(netBalanceMs(recs), -9 * HOUR, "net balance counts rain, skips unfinished days");
+  eq(netBalanceMs(recs), -3 * HOUR, "net balance deducts un-taken lunch, skips unfinished");
   console.log("payroll self-check done");
 }

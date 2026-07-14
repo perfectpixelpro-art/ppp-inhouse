@@ -5,6 +5,7 @@ import Modal from "../../panel/Modal";
 import AttendanceCalendar from "../../panel/AttendanceCalendar";
 import BalanceCard from "../../panel/BalanceCard";
 import LocationStamp from "../../panel/LocationStamp";
+import { overtimeMs } from "../../panel/payroll";
 import "./attendance.css";
 
 const HOUR = 3600000;
@@ -285,7 +286,7 @@ export default function MyAttendancePage() {
                 {records.map((r) => {
                   const ms = r.workedMs || 0;
                   const t = targetMs(r);
-                  const ot = ms - t;
+                  const ot = overtimeMs(r); // excludes an un-taken lunch hour
                   return (
                     <tr key={r._id}>
                       <td>{fmtDate(r.date)}</td>

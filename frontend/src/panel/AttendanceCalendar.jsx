@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { fmtDate, fmtTime } from "./utils";
 import Modal from "./Modal";
 import LocationStamp from "./LocationStamp";
+import { overtimeMs } from "./payroll";
 
 const DOW = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 const HOUR = 3600000;
@@ -102,7 +103,7 @@ export default function AttendanceCalendar({ records = [], month, showName = fal
             {detail.recs.map((r) => {
               const ms = r.workedMs || 0;
               const ended = r.state === "ended";
-              const ot = ms - targetMs(r);
+              const ot = overtimeMs(r); // excludes an un-taken lunch hour
               return (
                 <div key={r._id} className="day-detail-card">
                   <div className="ddc-head">

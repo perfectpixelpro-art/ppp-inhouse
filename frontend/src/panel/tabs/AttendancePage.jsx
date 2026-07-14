@@ -6,7 +6,7 @@ import Modal from "../Modal";
 import AttendanceCalendar from "../AttendanceCalendar";
 import BalanceCard from "../BalanceCard";
 import LocationStamp from "../LocationStamp";
-import { monthlySummary, SHORT_RATE } from "../payroll";
+import { monthlySummary, SHORT_RATE, overtimeMs } from "../payroll";
 
 const HOUR = 3600000;
 const targetMs = (r) => (r.dayType === "half" ? 4 : 8) * HOUR;
@@ -117,7 +117,7 @@ export default function AttendancePage() {
             <tbody>
               {rows.map((r) => {
                 const ms = r.workedMs || 0;
-                const ot = ms - targetMs(r);
+                const ot = overtimeMs(r); // excludes an un-taken lunch hour
                 return (
                   <tr key={r._id}>
                     <td>

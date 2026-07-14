@@ -79,6 +79,10 @@ const run = async () => {
       continue;
     }
 
+    // The sheet's hours already exclude 1h lunch, so mark a lunch break — otherwise
+    // the payroll logic would deduct a second lunch hour from these rows.
+    const lunch = { type: "lunch", start: istDate(r.date, { h: 14, m: 0 }), end: istDate(r.date, { h: 15, m: 0 }) };
+
     await Attendance.updateOne(
       { employee: userByName[r.name]._id, date: r.date },
       {
@@ -89,6 +93,7 @@ const run = async () => {
           checkIn,
           checkOut,
           workedMs,
+          breaks: [lunch],
           dsr: r.dsr,
           rain: RAIN_DATES.has(r.date) || !!r.rain,
           currentStart: null,
