@@ -30,28 +30,39 @@ export const sendBirthdayAnniversary = async () => {
   }
 };
 
-// Send a Slack shift-check to everyone still actively working (full day).
-// "No" ends their day; "Yes" continues; ignored → they get the next reminder.
-export const sendShiftReminders = async () => {
-  const date = new Date().toISOString().slice(0, 10);
-  const records = await Attendance.find({ date, dayType: "full", state: "working" })
-    .populate("employee", "name slackUserId");
+// Current time as "HH:MM" in IST — matches User.reminderTimesIST entries.
+const istHHMM = (ms = Date.now()) =>
+  new Date(ms).toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit", hour12: false, timeZone: "Asia/Kolkata" });
+
+// Runs every 5 min in the evening. For each still-working full-day employee, sends
+// a Slack shift-check if the current time matches one of THEIR reminder times, then
+// force-closes anyone whose per-employee shift cap has arrived. Per-person schedule
+// lives on the User (reminderTimesIST / shiftCapIST).
+export const eveningTick = async (nowMs = Date.now()) => {
+  const now = istHHMM(nowMs);
+  const date = new Date(nowMs).toISOString().slice(0, 10);
+
+  const working = await Attendance.find({ date, dayType: "full", state: "working" })
+    .populate("employee", "name slackUserId reminderTimesIST");
   let sent = 0;
-  for (const r of records) {
-    if (!r.employee) continue;
-    const res = await postShiftCheck({ employee: r.employee, attendance: r });
-    if (res?.ok) sent++;
+  for (const r of working) {
+    const times = r.employee?.reminderTimesIST || [];
+    if (times.includes(now)) {
+      const res = await postShiftCheck({ employee: r.employee, attendance: r });
+      if (res?.ok) sent++;
+    }
   }
-  console.log(`[scheduler] shift reminders sent: ${sent}/${records.length}`);
-  return sent;
+
+  const closed = await hardStopAll(nowMs); // closes anyone past their own cap
+  if (sent || closed) console.log(`[scheduler] evening tick ${now} — ${sent} reminder(s), ${closed} auto-closed`);
+  return { sent, closed };
 };
 
 // Registers all recurring background jobs.
 export const startScheduler = () => {
-  // Escalating shift-check reminders (IST)
-  cron.schedule("15 20 * * *", sendShiftReminders, IST); // 8:15 PM
-  cron.schedule("20 20 * * *", sendShiftReminders, IST); // 8:20 PM
-  cron.schedule("25 20 * * *", sendShiftReminders, IST); // 8:25 PM
+  // Per-employee shift reminders + caps — every 5 min through the evening window.
+  // Each person's reminder times and cap live on their User record.
+  cron.schedule("*/5 20-21 * * *", () => eveningTick().catch((e) => console.error("[scheduler] evening tick failed:", e.message)), IST);
 
   // 2:00 PM — auto-pause open full-day timers for lunch
   cron.schedule(
@@ -67,17 +78,10 @@ export const startScheduler = () => {
     IST
   );
 
-  // 8:30 PM — force-close any open full-day shift (final backstop)
+  // 9:05 PM — backstop in case a late cap (e.g. 9 PM) slipped the evening tick
   cron.schedule(
-    "30 20 * * *",
-    async () => {
-      try {
-        const closed = await hardStopAll();
-        console.log(`[scheduler] 8:30 PM hard stop — closed ${closed} open full-day record(s)`);
-      } catch (err) {
-        console.error("[scheduler] hard stop failed:", err.message);
-      }
-    },
+    "5 21 * * *",
+    () => hardStopAll().then((n) => n && console.log(`[scheduler] 9:05 PM backstop — closed ${n}`)).catch((e) => console.error("[scheduler] backstop failed:", e.message)),
     IST
   );
 
@@ -112,5 +116,5 @@ export const startScheduler = () => {
     IST
   );
 
-  console.log("[scheduler] Slack reminders + 8:30 hard stop + 10 PM Google sync + 9 AM birthday mail scheduled (Asia/Kolkata)");
+  console.log("[scheduler] per-employee shift reminders/caps + 2 PM lunch + 10 PM Google sync + 9 AM birthday mail scheduled (Asia/Kolkata)");
 };

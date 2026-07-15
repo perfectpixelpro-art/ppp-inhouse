@@ -96,7 +96,7 @@ export const myAttendance = async (req, res) => {
   const records = await Attendance.find({ employee: req.user._id }).sort({ date: -1 });
   const today = todayYMD();
   for (const r of records) {
-    if (r.date === today) { await applyLunchStop(r); await applyHardStop(r); }
+    if (r.date === today) { await applyLunchStop(r); await applyHardStop(r, req.user.shiftCapIST); }
     else await finalizeIfStale(r);
   }
   res.json(records);
@@ -107,7 +107,7 @@ export const myToday = async (req, res) => {
   const record = await Attendance.findOne({ employee: req.user._id, date: todayYMD() });
   if (record) {
     await applyLunchStop(record); // 2 PM auto-lunch
-    await applyHardStop(record); // 8:30 PM cap
+    await applyHardStop(record, req.user.shiftCapIST); // per-employee shift cap
   }
   res.json(record || null);
 };
@@ -139,7 +139,7 @@ export const checkIn = async (req, res) => {
   }
 
   await applyLunchStop(record); // 2 PM auto-lunch (may flip working → on_lunch)
-  await applyHardStop(record); // may close the day if it's past 8:30 PM
+  await applyHardStop(record, req.user.shiftCapIST); // may close the day if past their cap
 
   if (record.state === "working") {
     return res.status(400).json({ message: "Timer is already running" });

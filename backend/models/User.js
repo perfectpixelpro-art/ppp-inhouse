@@ -82,6 +82,10 @@ const userSchema = new mongoose.Schema(
     // Password reset (admin/HR only). We store the SHA-256 hash, never the token.
     resetTokenHash: { type: String, select: false },
     resetTokenExpires: { type: Date, select: false },
+    // Per-employee shift schedule (IST, "HH:MM"). Defaults: reminders at 8:15/8:20/
+    // 8:25 PM, timer force-stops at 8:30 PM. Override per person as needed.
+    shiftCapIST: { type: String, default: "20:30" },
+    reminderTimesIST: { type: [String], default: ["20:15", "20:20", "20:25"] },
   },
   { timestamps: true }
 );
