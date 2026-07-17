@@ -4,9 +4,10 @@
 //  - else per-day penalty by notice (fromDate − appliedAt): >=7d → 1 · 3–6d → 1.5
 //    (1 if docs attached) · <3d → 2, then multiplied by the number of leave days
 //  - type: during probation → salary (no paid leave); otherwise → leave balance.
-//    Non-probation staff accrue 1.5 paid days per month (see accruedLeaveDays);
-//    penalty beyond the accrued balance spills to salary — that spill is computed
-//    in the balance aggregate (getLeaveBalance), not here.
+//    Non-probation staff get 1.5 paid days on leaving probation and 1.5 more each
+//    month after (see accruedLeaveDays); penalty beyond the accrued balance spills
+//    to salary — that spill is computed in the balance aggregate (getLeaveBalance),
+//    not here.
 export const MONTHLY_ACCRUAL = 1.5;
 const DAY = 86400000;
 const startOfDay = (d) => { const x = new Date(d); x.setHours(0, 0, 0, 0); return x.getTime(); };
@@ -41,18 +42,20 @@ export function computeLeaveDeduction(leave, employee) {
   return { days, type: inProbation ? "salary" : "leave", reason: `${label}${inProbation ? " (probation)" : ""}` };
 }
 
-// Paid leave a non-probation employee has accrued: 1.5 days per whole month since
-// probation ended (or since joining, if no probation). Zero while in probation.
+// Paid leave a non-probation employee has accrued. The first 1.5 days are granted
+// up front the moment probation ends (or on joining, if there's no probation), and
+// another 1.5 lands on each monthly anniversary of that date. Zero while still in
+// probation. So probation ending 30 Jun → 1.5 from 30 Jun, 3 from 30 Jul, and so on.
 export function accruedLeaveDays(employee, asOf = new Date()) {
   const start = employee?.probationEnd || employee?.joinDate;
   if (!start) return 0;
   const s = new Date(start);
-  if (s > asOf) return 0;
+  if (s > asOf) return 0; // probation hasn't ended yet
   const months =
     (asOf.getFullYear() - s.getFullYear()) * 12 +
     (asOf.getMonth() - s.getMonth()) -
     (asOf.getDate() < s.getDate() ? 1 : 0);
-  return Math.max(0, months) * MONTHLY_ACCRUAL;
+  return (Math.max(0, months) + 1) * MONTHLY_ACCRUAL;
 }
 
 // self-check: node services/leaveDeduction.js
@@ -74,9 +77,16 @@ if (import.meta.url === `file://${process.argv[1]}`) {
   eq(computeLeaveDeduction(mk("2026-07-22", "2026-07-24", "2026-07-08"), emp(false)), { days: 3, type: "leave" }, "3-day leave, 14d notice");
   eq(computeLeaveDeduction(mk("2026-07-22", "2026-07-23", "2026-07-21"), emp(false)), { days: 4, type: "leave" }, "2-day leave, short notice ×2");
 
-  // accrual: 1.5 per whole month since probation end (probation itself accrues 0)
-  console.assert(accruedLeaveDays({ probationEnd: d("2026-01-15") }, d("2026-07-15")) === 9, "6 months → 9 days");
-  console.assert(accruedLeaveDays({ probationEnd: d("2026-07-31") }, d("2026-07-15")) === 0, "still in probation → 0");
-  console.assert(accruedLeaveDays({ joinDate: d("2026-04-10") }, d("2026-07-15")) === 4.5, "no probation, 3 months → 4.5");
+  // accrual: 1.5 granted at probation exit, +1.5 each monthly anniversary after.
+  const acc = (e, on, exp, msg) => console.assert(accruedLeaveDays(e, d(on)) === exp, `${msg}: got ${accruedLeaveDays(e, d(on))} exp ${exp}`);
+  acc({ probationEnd: d("2026-01-15") }, "2026-07-15", 10.5, "6 months on → 1.5 + 6×1.5");
+  acc({ probationEnd: d("2026-07-31") }, "2026-07-15", 0, "still in probation → 0");
+  acc({ joinDate: d("2026-04-10") }, "2026-07-15", 6, "no probation, 3 months → 1.5 + 3×1.5");
+  acc({}, "2026-07-15", 0, "no dates at all → 0");
+  // the case that was showing 0 in the Leaves Remaining tab: probation just ended
+  acc({ probationEnd: d("2026-06-30") }, "2026-07-17", 1.5, "probation ended 17d ago → 1.5");
+  acc({ probationEnd: d("2026-07-16") }, "2026-07-17", 1.5, "probation ended yesterday → 1.5");
+  acc({ probationEnd: d("2026-07-17") }, "2026-07-17", 1.5, "probation ends today → 1.5 same day");
+  acc({ probationEnd: d("2026-06-15") }, "2026-07-17", 3, "one anniversary passed → 3");
   console.log("leaveDeduction self-check done");
 }

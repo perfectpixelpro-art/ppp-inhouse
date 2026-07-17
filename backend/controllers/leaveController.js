@@ -22,10 +22,11 @@ export const getLeaves = async (req, res) => {
 };
 
 // GET /api/leaves/balance  -> per-employee accrued leave, used, remaining, salary cut
-// Allowance accrues at 1.5 days/month (post-probation). Approved-leave penalties draw
-// from that balance; probation leaves and any penalty over the balance become salary cut.
+// Allowance is 1.5 days granted at probation exit plus 1.5 per month after. Approved-leave
+// penalties draw from that balance; probation leaves and any penalty over the balance
+// become salary cut. Admin/HR and deactivated accounts are not listed.
 export const getLeaveBalance = async (req, res) => {
-  const employees = await User.find().select(
+  const employees = await User.find({ role: "employee", active: true }).select(
     "name email designation photo department joinDate probationStart probationEnd"
   );
   const approved = await Leave.aggregate([
