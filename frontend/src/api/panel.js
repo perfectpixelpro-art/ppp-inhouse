@@ -32,6 +32,9 @@ export const deleteExpense = (id) => client.delete(`/expenses/${id}`).then((r) =
 // Attendance
 export const fetchAttendance = (params) => client.get("/attendance", { params }).then((r) => r.data);
 
+// Correct a day's punch times (admin/hr)
+export const editAttendance = (id, data) => client.patch(`/attendance/${id}`, data).then((r) => r.data);
+
 // Google Sheets sync (admin/hr)
 export const googleStatus = () => client.get("/google/status").then((r) => r.data);
 export const syncAttendanceSheet = (month) => client.post("/google/sync/attendance", null, { params: { month } }).then((r) => r.data);

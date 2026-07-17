@@ -1,4 +1,30 @@
 import Attendance from "../models/Attendance.js";
+import { recomputeWorkedMs } from "../services/attendanceEdit.js";
+
+// PATCH /api/attendance/:id  { checkIn, checkOut }  (admin/hr) — correct a day's times
+export const editAttendance = async (req, res) => {
+  const rec = await Attendance.findById(req.params.id);
+  if (!rec) return res.status(404).json({ message: "Record not found" });
+
+  const { checkIn, checkOut } = req.body;
+  if (checkIn) rec.checkIn = new Date(checkIn);
+  if (checkOut) rec.checkOut = new Date(checkOut);
+  if (!rec.checkIn || !rec.checkOut) {
+    return res.status(400).json({ message: "Both in and out times are required" });
+  }
+  if (rec.checkOut <= rec.checkIn) {
+    return res.status(400).json({ message: "Out time must be after in time" });
+  }
+
+  rec.workedMs = recomputeWorkedMs(rec.checkIn, rec.checkOut, rec.breaks);
+  rec.state = "ended";       // an edited day is a finished day
+  rec.currentStart = null;   // stop any running segment
+  rec.status = "present";
+  rec.editedBy = req.user._id;
+  rec.editedAt = new Date();
+  await rec.save();
+  res.json(await rec.populate("employee", "name email designation photo department"));
+};
 
 // GET /api/attendance?date=YYYY-MM-DD | month=YYYY-MM | employee=
 export const getAttendance = async (req, res) => {

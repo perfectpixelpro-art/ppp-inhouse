@@ -1,9 +1,11 @@
 import cron from "node-cron";
 import Attendance from "./models/Attendance.js";
 import User from "./models/User.js";
+import Holiday from "./models/Holiday.js";
+import Leave from "./models/Leave.js";
 import { hardStopAll } from "./services/attendanceHardStop.js";
 import { lunchStopAll } from "./services/attendanceLunch.js";
-import { postShiftCheck } from "./services/slack.js";
+import { postShiftCheck, postToChannel } from "./services/slack.js";
 import { syncMonth } from "./controllers/googleController.js";
 import { isAuthorized } from "./services/googleSheets.js";
 import { sendMail, staffEmails } from "./services/mail.js";
@@ -58,8 +60,42 @@ export const eveningTick = async (nowMs = Date.now()) => {
   return { sent, closed };
 };
 
+// Off days: Sunday, EVEN Saturday (2nd/4th), national holiday. Mirrors payroll.js.
+const isWorkingDay = async (d) => {
+  const dow = d.getDay();
+  if (dow === 0) return false;
+  if (dow === 6 && Math.ceil(d.getDate() / 7) % 2 === 0) return false;
+  const start = new Date(d); start.setHours(0, 0, 0, 0);
+  const end = new Date(start); end.setDate(end.getDate() + 1);
+  return !(await Holiday.findOne({ type: "national", date: { $gte: start, $lt: end } }));
+};
+
+// Mid-afternoon nudge: who still hasn't checked in today?
+export const notCheckedInPing = async (now = new Date()) => {
+  if (!(await isWorkingDay(now))) return 0;
+  const date = now.toISOString().slice(0, 10);
+
+  const [staff, punched, onLeave] = await Promise.all([
+    User.find({ role: "employee", active: true }).select("name slackUserId"),
+    Attendance.find({ date, checkIn: { $ne: null } }).select("employee"),
+    Leave.find({ status: "approved", fromDate: { $lte: now }, toDate: { $gte: now } }).select("employee"),
+  ]);
+
+  const skip = new Set([...punched, ...onLeave].map((r) => String(r.employee)));
+  const missing = staff.filter((e) => !skip.has(String(e._id)));
+  if (!missing.length) return 0;
+
+  const who = missing.map((e) => (e.slackUserId ? `<@${e.slackUserId}>` : e.name)).join(" ");
+  await postToChannel(`:alarm_clock: ${who} — you haven't checked in yet today. Please mark your check-in in the PPP portal.`);
+  console.log(`[scheduler] 3:10 PM check-in reminder — pinged ${missing.length}`);
+  return missing.length;
+};
+
 // Registers all recurring background jobs.
 export const startScheduler = () => {
+  // 3:10 PM — remind anyone who forgot to check in
+  cron.schedule("10 15 * * *", () => notCheckedInPing().catch((e) => console.error("[scheduler] check-in ping failed:", e.message)), IST);
+
   // Per-employee shift reminders + caps — every 5 min through the evening window.
   // Each person's reminder times and cap live on their User record.
   cron.schedule("*/5 20-21 * * *", () => eveningTick().catch((e) => console.error("[scheduler] evening tick failed:", e.message)), IST);

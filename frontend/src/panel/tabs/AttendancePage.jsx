@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { fetchAttendance, fetchEmployees, fetchHolidays } from "../../api/panel";
+import { fetchAttendance, fetchEmployees, fetchHolidays, editAttendance } from "../../api/panel";
 import { fmtDate, fmtTime, thisMonth, monthLabel, inr } from "../utils";
 import Avatar from "../Avatar";
 import Modal from "../Modal";
@@ -28,6 +28,30 @@ export default function AttendancePage() {
   const [view, setView] = useState("table");
   const [holidaySet, setHolidaySet] = useState(new Set());
   const [summary, setSummary] = useState(null);
+  const [edit, setEdit] = useState(null); // { rec, in, out }
+  const [saving, setSaving] = useState(false);
+  const [editErr, setEditErr] = useState("");
+
+  // Times are edited in the browser's local zone (IST for HR)
+  const toTimeInput = (d) => (d ? new Date(d).toTimeString().slice(0, 5) : "");
+  const openEdit = (rec) => {
+    setEditErr("");
+    setEdit({ rec, in: toTimeInput(rec.checkIn), out: toTimeInput(rec.checkOut) });
+  };
+  const saveEdit = async () => {
+    setSaving(true); setEditErr("");
+    try {
+      await editAttendance(edit.rec._id, {
+        checkIn: new Date(`${edit.rec.date}T${edit.in}`).toISOString(),
+        checkOut: new Date(`${edit.rec.date}T${edit.out}`).toISOString(),
+      });
+      setEdit(null);
+      const params = { month }; if (emp) params.employee = emp;
+      fetchAttendance(params).then(setRecords);
+    } catch (e) {
+      setEditErr(e.response?.data?.message || e.message);
+    } finally { setSaving(false); }
+  };
 
   useEffect(() => { fetchEmployees().then(setEmployees); }, []);
   useEffect(() => {
@@ -111,7 +135,7 @@ export default function AttendancePage() {
             <thead>
               <tr>
                 <th>Employee</th><th>Date</th><th>Day</th><th>In</th><th>Out</th>
-                <th>Worked</th><th>Overtime</th><th>Short</th><th>Status</th><th>Location</th><th>Daily Task</th>
+                <th>Worked</th><th>Overtime</th><th>Short</th><th>Status</th><th>Location</th><th>Daily Task</th><th></th>
               </tr>
             </thead>
             <tbody>
@@ -142,13 +166,50 @@ export default function AttendancePage() {
                     <td style={{ maxWidth: 240, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }} title={r.dsr || ""}>
                       {r.dsr || "—"}
                     </td>
+                    <td>
+                      <button className="btn btn-ghost btn-sm" onClick={() => openEdit(r)}
+                        title={r.editedAt ? `Edited ${fmtDate(r.editedAt)}` : "Correct in/out times"}>
+                        ✏️ Edit{r.editedAt ? "*" : ""}
+                      </button>
+                    </td>
                   </tr>
                 );
               })}
-              {rows.length === 0 && <tr><td colSpan={11} className="empty">No attendance for this month.</td></tr>}
+              {rows.length === 0 && <tr><td colSpan={12} className="empty">No attendance for this month.</td></tr>}
             </tbody>
           </table>
         </div>
+      )}
+
+      {edit && (
+        <Modal
+          title={`Edit times — ${edit.rec.employee?.name || ""} · ${fmtDate(edit.rec.date)}`}
+          onClose={() => setEdit(null)}
+          footer={
+            <>
+              <button className="btn btn-ghost" onClick={() => setEdit(null)}>Cancel</button>
+              <button className="btn btn-primary" onClick={saveEdit} disabled={saving || !edit.in || !edit.out}>
+                {saving ? "Saving…" : "Save"}
+              </button>
+            </>
+          }
+        >
+          {editErr && <div className="error-banner">{editErr}</div>}
+          <div className="form-grid">
+            <div className="form-field">
+              <label>Check in</label>
+              <input type="time" value={edit.in} onChange={(e) => setEdit((s) => ({ ...s, in: e.target.value }))} />
+            </div>
+            <div className="form-field">
+              <label>Check out</label>
+              <input type="time" value={edit.out} onChange={(e) => setEdit((s) => ({ ...s, out: e.target.value }))} />
+            </div>
+          </div>
+          <p className="p-sub" style={{ marginTop: "0.75rem" }}>
+            Worked time is recalculated as (out − in) minus recorded breaks, and the day is marked ended.
+            An un-taken lunch hour is still deducted by payroll.
+          </p>
+        </Modal>
       )}
 
       {summary && (

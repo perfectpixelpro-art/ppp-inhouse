@@ -39,6 +39,8 @@ const attendanceSchema = new mongoose.Schema(
     autoClosed: { type: Boolean, default: false },
     dsr: { type: String, default: "" }, // daily status report / task summary
     rain: { type: Boolean, default: false }, // employee-flagged rain day — excluded from auto-deduction, HR reviews manually
+    editedBy: { type: mongoose.Schema.Types.ObjectId, ref: "User" }, // HR/admin who corrected the times
+    editedAt: { type: Date },
     // Set only when checking in from a touch device (phone/tablet using desktop
     // mode). Office Macs report no touch and check in without a location prompt.
     checkInLocation: {
