@@ -5,6 +5,7 @@ import Holiday from "./models/Holiday.js";
 import Leave from "./models/Leave.js";
 import { hardStopAll } from "./services/attendanceHardStop.js";
 import { lunchStopAll } from "./services/attendanceLunch.js";
+import { remindLongBreaks, remindLunchNotResumed } from "./services/attendanceBreakReminder.js";
 import { postShiftCheck, postToChannel } from "./services/slack.js";
 import { syncMonth } from "./controllers/googleController.js";
 import { isAuthorized } from "./services/googleSheets.js";
@@ -93,8 +94,28 @@ export const notCheckedInPing = async (now = new Date()) => {
 
 // Registers all recurring background jobs.
 export const startScheduler = () => {
-  // 3:10 PM — remind anyone who forgot to check in
+  // 3:10 PM — remind anyone who forgot to check in, and anyone whose timer is
+  // still paused for lunch now that the 2–3 PM window has closed.
   cron.schedule("10 15 * * *", () => notCheckedInPing().catch((e) => console.error("[scheduler] check-in ping failed:", e.message)), IST);
+  cron.schedule(
+    "10 15 * * *",
+    () =>
+      remindLunchNotResumed()
+        .then((n) => n && console.log(`[scheduler] 3:10 PM lunch reminder — pinged ${n}`))
+        .catch((e) => console.error("[scheduler] lunch reminder failed:", e.message)),
+    IST
+  );
+
+  // Every 5 min — nudge anyone whose SHORT break has run past 15 minutes without
+  // resuming. Lunch is exempt (it has its own 2–3 PM window and the 3:10 PM job).
+  cron.schedule(
+    "*/5 * * * *",
+    () =>
+      remindLongBreaks()
+        .then((n) => n && console.log(`[scheduler] break reminder — pinged ${n}`))
+        .catch((e) => console.error("[scheduler] break reminder failed:", e.message)),
+    IST
+  );
 
   // Per-employee shift reminders + caps — every 5 min through the evening window.
   // Each person's reminder times and cap live on their User record.
@@ -152,5 +173,5 @@ export const startScheduler = () => {
     IST
   );
 
-  console.log("[scheduler] per-employee shift reminders/caps + 2 PM lunch + 10 PM Google sync + 9 AM birthday mail scheduled (Asia/Kolkata)");
+  console.log("[scheduler] per-employee shift reminders/caps + 2 PM lunch + 15-min break nudge + 3:10 PM check-in/lunch pings + 10 PM Google sync + 9 AM birthday mail scheduled (Asia/Kolkata)");
 };

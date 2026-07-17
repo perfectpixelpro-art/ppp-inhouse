@@ -9,6 +9,10 @@ const breakSchema = new mongoose.Schema(
     type: { type: String, enum: ["lunch", "break"] },
     start: Date,
     end: Date,
+    // When we Slack-nudged the employee that this break is still open. Set once so
+    // the 5-min reminder cron doesn't re-ping the same break. See
+    // services/attendanceBreakReminder.js.
+    remindedAt: Date,
   },
   { _id: false }
 );
