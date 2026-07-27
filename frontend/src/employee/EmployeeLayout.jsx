@@ -13,7 +13,8 @@ const TABS = [
   { to: "upcoming-holidays", label: "National Holidays", icon: "📅" },
   { to: "special-days", label: "Special Days", icon: "🎉" },
   { to: "gallery", label: "Gallery", icon: "🖼️" },
-  { to: "policy", label: "Policy", icon: "📜" },
+  { to: "policy", label: "Policy", icon: "📜" },  
+  {to: "project", label:"Project Management", icon: "📝"}
 ];
 
 export default function EmployeeLayout() {

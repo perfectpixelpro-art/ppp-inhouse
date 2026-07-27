@@ -35,6 +35,14 @@ export const fetchPolicy = () => client.get("/policy").then((r) => r.data);
 export const fetchMyNotices = () => client.get("/notices/mine").then((r) => r.data);
 export const ackNotice = (id, note) => client.post(`/notices/${id}/ack`, { note }).then((r) => r.data);
 
+// Tasks / Project Management (anyone can assign to anyone)
+export const fetchAssignableUsers = () => client.get("/tasks/assignable").then((r) => r.data);
+export const myTasks = () => client.get("/tasks/mine").then((r) => r.data);
+export const tasksAssignedByMe = () => client.get("/tasks/assigned").then((r) => r.data);
+export const createTask = (data) => client.post("/tasks", data).then((r) => r.data);
+export const setTaskStatus = (id, status) => client.patch(`/tasks/${id}/status`, { status }).then((r) => r.data);
+export const deleteTask = (id) => client.delete(`/tasks/${id}`).then((r) => r.data);
+
 // Image upload — returns { url }
 export const uploadFile = (file) => {
   const fd = new FormData();
