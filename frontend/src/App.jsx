@@ -12,7 +12,12 @@ import EmpUpcomingHolidaysPage from "./employee/tabs/EmpUpcomingHolidaysPage";
 import EmpSpecialDaysPage from "./employee/tabs/EmpSpecialDaysPage";
 import GalleryPage from "./employee/tabs/GalleryPage";
 import PolicyPage from "./employee/tabs/PolicyPage";
-import MyTasksPage from "./employee/tabs/MyTasksPage";
+import ProjectModule from "./employee/pm/ProjectModule";
+import PMHome from "./employee/pm/PMHome";
+import PMMyTasks from "./employee/pm/PMMyTasks";
+import ProjectsList from "./employee/pm/ProjectsList";
+import ProjectDetail from "./employee/pm/ProjectDetail";
+import Portfolio from "./employee/pm/Portfolio";
 
 // Panel tab routes for a given role — Admin gets all tabs, HR a subset.
 // Unknown nested paths fall back (absolutely) to the role's first tab.
@@ -89,7 +94,13 @@ export default function App() {
             <Route path="special-days" element={<EmpSpecialDaysPage />} />
             <Route path="gallery" element={<GalleryPage />} />
             <Route path="policy" element={<PolicyPage />} />
-            <Route path="project" element={<MyTasksPage />} />
+            <Route path="project" element={<ProjectModule />}>
+              <Route index element={<PMHome />} />
+              <Route path="my-tasks" element={<PMMyTasks />} />
+              <Route path="projects" element={<ProjectsList />} />
+              <Route path="projects/:id" element={<ProjectDetail />} />
+              <Route path="portfolio" element={<Portfolio />} />
+            </Route>
             <Route path="*" element={<Navigate to="/employee/attendance" replace />} />
           </Route>
 

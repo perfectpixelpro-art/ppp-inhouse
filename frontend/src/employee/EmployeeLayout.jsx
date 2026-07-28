@@ -1,4 +1,4 @@
-import { NavLink, Outlet, useNavigate } from "react-router-dom";
+import { NavLink, Outlet, useNavigate, useLocation } from "react-router-dom";
 import { useState } from "react";
 import { useAuth } from "../context/AuthContext";
 import Avatar from "../panel/Avatar";
@@ -13,14 +13,24 @@ const TABS = [
   { to: "upcoming-holidays", label: "National Holidays", icon: "📅" },
   { to: "special-days", label: "Special Days", icon: "🎉" },
   { to: "gallery", label: "Gallery", icon: "🖼️" },
-  { to: "policy", label: "Policy", icon: "📜" },  
+  { to: "policy", label: "Policy", icon: "📜" },
   {to: "project", label:"Project Management", icon: "📝"}
+];
+
+// Sub-items shown in the sidebar ONLY while inside the Project Management section.
+const PROJECT_SUBTABS = [
+  { to: "project", label: "Home", icon: "🏠", end: true },
+  { to: "project/my-tasks", label: "My Tasks", icon: "✅" },
+  { to: "project/projects", label: "Projects", icon: "📁" },
+  { to: "project/portfolio", label: "Portfolio", icon: "📊" },
 ];
 
 export default function EmployeeLayout() {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
   const [open, setOpen] = useState(false);
+  const inProject = location.pathname.startsWith("/employee/project");
 
   const handleLogout = () => {
     logout();
@@ -38,15 +48,35 @@ export default function EmployeeLayout() {
         </div>
         <nav className="panel-nav">
           {TABS.map((t) => (
-            <NavLink
-              key={t.to}
-              to={t.to}
-              className={({ isActive }) => `panel-link ${isActive ? "active" : ""}`}
-              onClick={() => setOpen(false)}
-            >
-              <span className="panel-link-icon">{t.icon}</span>
-              <span>{t.label}</span>
-            </NavLink>
+            <div key={t.to}>
+              <NavLink
+                to={t.to}
+                end={t.to === "project"}
+                className={({ isActive }) => `panel-link ${isActive ? "active" : ""}`}
+                onClick={() => setOpen(false)}
+              >
+                <span className="panel-link-icon">{t.icon}</span>
+                <span>{t.label}</span>
+              </NavLink>
+
+              {/* Project Management sub-nav — visible only inside that section */}
+              {t.to === "project" && inProject && (
+                <div className="panel-subnav">
+                  {PROJECT_SUBTABS.map((s) => (
+                    <NavLink
+                      key={s.to}
+                      to={s.to}
+                      end={s.end}
+                      className={({ isActive }) => `panel-sublink ${isActive ? "active" : ""}`}
+                      onClick={() => setOpen(false)}
+                    >
+                      <span className="panel-link-icon">{s.icon}</span>
+                      <span>{s.label}</span>
+                    </NavLink>
+                  ))}
+                </div>
+              )}
+            </div>
           ))}
         </nav>
       </aside>

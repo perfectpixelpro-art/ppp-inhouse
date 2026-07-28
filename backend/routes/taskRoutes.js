@@ -3,7 +3,10 @@ import {
   assignableUsers,
   myTasks,
   assignedByMe,
+  projectTasks,
+  portfolio,
   createTask,
+  updateTask,
   updateStatus,
   deleteTask,
 } from "../controllers/taskController.js";
@@ -17,8 +20,11 @@ router.use(protect);
 router.get("/assignable", assignableUsers);
 router.get("/mine", myTasks);
 router.get("/assigned", assignedByMe);
+router.get("/portfolio", portfolio);
+router.get("/", projectTasks); // ?project=:id — tasks in a project
 router.post("/", createTask);
 router.patch("/:id/status", updateStatus);
+router.patch("/:id", updateTask);
 router.delete("/:id", deleteTask);
 
 export default router;

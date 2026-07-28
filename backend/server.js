@@ -17,6 +17,7 @@ import uploadRoutes from "./routes/uploadRoutes.js";
 import policyRoutes from "./routes/policyRoutes.js";
 import noticeRoutes from "./routes/noticeRoutes.js";
 import taskRoutes from "./routes/taskRoutes.js";
+import projectRoutes from "./routes/projectRoutes.js";
 import { UPLOAD_DIR } from "./middleware/upload.js";
 import { startScheduler } from "./scheduler.js";
 
@@ -52,6 +53,7 @@ app.use("/api/uploads", uploadRoutes);
 app.use("/api/policy", policyRoutes);
 app.use("/api/notices", noticeRoutes);
 app.use("/api/tasks", taskRoutes);
+app.use("/api/projects", projectRoutes);
 
 // Serve uploaded images
 app.use("/uploads", express.static(UPLOAD_DIR));
