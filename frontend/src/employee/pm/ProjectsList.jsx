@@ -1,6 +1,8 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { fetchProjects, createProject, fetchAssignableUsers } from "../../api/pm";
+import { useAuth } from "../../context/AuthContext";
+import { canSeeAllPM } from "../../roles";
 import Modal from "../../panel/Modal";
 
 export default function ProjectsList() {
@@ -12,6 +14,8 @@ export default function ProjectsList() {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
   const nav = useNavigate();
+  const { user } = useAuth();
+  const canCreate = canSeeAllPM(user?.role);
 
   const load = () => { setLoading(true); fetchProjects().then(setProjects).finally(() => setLoading(false)); };
   useEffect(() => { load(); fetchAssignableUsers().then(setPeople).catch(() => {}); }, []);
@@ -39,7 +43,7 @@ export default function ProjectsList() {
           <h2>Projects</h2>
           <p>Projects you're a member of</p>
         </div>
-        <button className="btn btn-primary" onClick={() => { setError(""); setShow(true); }}>+ New Project</button>
+        {canCreate && <button className="btn btn-primary" onClick={() => { setError(""); setShow(true); }}>+ New Project</button>}
       </div>
 
       {loading ? (

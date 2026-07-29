@@ -1,5 +1,6 @@
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { AuthProvider, useAuth } from "./context/AuthContext";
+import { portalPath } from "./roles";
 import ProtectedRoute from "./components/ProtectedRoute";
 import Login from "./pages/Login";
 import ResetPassword from "./pages/ResetPassword";
@@ -40,13 +41,13 @@ function panelTabRoutes(role) {
 function RootRedirect() {
   const { user, loading } = useAuth();
   if (loading) return null;
-  return <Navigate to={user ? `/${user.role}` : "/login"} replace />;
+  return <Navigate to={user ? portalPath(user.role) : "/login"} replace />;
 }
 
 function LoginRoute() {
   const { user, loading } = useAuth();
   if (loading) return null;
-  if (user) return <Navigate to={`/${user.role}`} replace />;
+  if (user) return <Navigate to={portalPath(user.role)} replace />;
   return <Login />;
 }
 
@@ -84,7 +85,7 @@ export default function App() {
           <Route
             path="/employee"
             element={
-              <ProtectedRoute allow={["employee"]}>
+              <ProtectedRoute allow={["employee", "project_manager"]}>
                 <EmployeeLayout />
               </ProtectedRoute>
             }

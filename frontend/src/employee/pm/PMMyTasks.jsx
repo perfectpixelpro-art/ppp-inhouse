@@ -1,15 +1,16 @@
 import { useEffect, useState } from "react";
 import { fetchMyTasks, fetchAllTasks, fetchProjects } from "../../api/pm";
 import { useAuth } from "../../context/AuthContext";
+import { canSeeAllPM } from "../../roles";
 import TaskTabsList from "./views/TaskTabsList";
 import TaskModal from "./TaskModal";
 
 // My Tasks — a plain task list split into Today / Overdue / Upcoming / Completed
-// tabs. No timeline or calendar here. Admin/HR see every employee's tasks (with an
-// assignee column); employees see only their own.
+// tabs. No timeline or calendar here. Admin/HR/Project-Manager see every employee's
+// tasks (with an assignee column); employees see only their own.
 export default function PMMyTasks() {
   const { user } = useAuth();
-  const isStaff = user?.role === "admin" || user?.role === "hr";
+  const isStaff = canSeeAllPM(user?.role);
   const [tasks, setTasks] = useState([]);
   const [projects, setProjects] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -29,7 +30,7 @@ export default function PMMyTasks() {
           <h2>{isStaff ? "All Tasks" : "My Tasks"}</h2>
           <p>{isStaff ? "Every employee's tasks" : "Everything assigned to you"}</p>
         </div>
-        <button className="btn btn-primary" onClick={() => setModal({ defaults: {} })}>+ New Task</button>
+        {isStaff && <button className="btn btn-primary" onClick={() => setModal({ defaults: {} })}>+ New Task</button>}
       </div>
 
       {loading ? (

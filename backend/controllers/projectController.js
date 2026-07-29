@@ -1,10 +1,11 @@
 import Project from "../models/Project.js";
 import Task from "../models/Task.js";
 import User from "../models/User.js";
+import { PM_VIEWER_ROLES } from "../models/User.js";
 
 const PERSON = "name email designation photo department";
 
-const isStaff = (user) => user.role === "admin" || user.role === "hr";
+const isStaff = (user) => PM_VIEWER_ROLES.includes(user.role);
 
 // Membership check that admin/HR always pass (they can see everything).
 const canView = (project, user) =>
@@ -34,8 +35,12 @@ export const listProjects = async (req, res) => {
   res.json(out);
 };
 
-// POST /api/projects  { name, description, members }  — anyone can create.
+// POST /api/projects  { name, description, members }  — only admin / HR /
+// project managers may create projects; employees cannot.
 export const createProject = async (req, res) => {
+  if (!isStaff(req.user)) {
+    return res.status(403).json({ message: "Only admin, HR or a project manager can create projects" });
+  }
   const { name, description, members } = req.body;
   if (!name || !name.trim()) return res.status(400).json({ message: "Project name is required" });
 

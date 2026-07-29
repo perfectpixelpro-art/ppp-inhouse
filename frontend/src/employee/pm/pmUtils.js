@@ -53,6 +53,13 @@ export const ymd = (d) => {
   return `${x.getFullYear()}-${String(x.getMonth() + 1).padStart(2, "0")}-${String(x.getDate()).padStart(2, "0")}`;
 };
 
+// Local "YYYY-MM-DDTHH:mm" for <input type="datetime-local"> (date + time).
+export const ymdhm = (d) => {
+  const x = new Date(d);
+  const p = (n) => String(n).padStart(2, "0");
+  return `${x.getFullYear()}-${p(x.getMonth() + 1)}-${p(x.getDate())}T${p(x.getHours())}:${p(x.getMinutes())}`;
+};
+
 export const dayDiff = (a, b) => Math.round((startOfDay(b) - startOfDay(a)) / 86400000);
 
 export const PRIORITY_COLOR = { low: "#6b7280", medium: "#b45309", high: "#dc2626" };

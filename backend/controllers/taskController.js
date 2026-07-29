@@ -2,11 +2,12 @@ import Task from "../models/Task.js";
 import User from "../models/User.js";
 import Project from "../models/Project.js";
 import { TASK_STATUS, TASK_PRIORITY } from "../models/Task.js";
+import { PM_VIEWER_ROLES } from "../models/User.js";
 
 const PERSON = "name email designation photo department";
 const PROJECT = "name";
 
-const isStaff = (user) => user.role === "admin" || user.role === "hr";
+const isStaff = (user) => PM_VIEWER_ROLES.includes(user.role);
 
 // Am I allowed to touch this task? Admin/HR always; otherwise the assignee, the
 // creator, or a member of its project.
@@ -76,10 +77,10 @@ export const projectTasks = async (req, res) => {
 // Employees see ONLY their own completed tasks. Admin/HR see everyone's, and may
 // filter by employee. Both may filter by project. Sorted newest-completed first.
 export const portfolio = async (req, res) => {
-  const isStaff = ["admin", "hr"].includes(req.user.role);
+  const staff = isStaff(req.user);
 
   const scope = { status: "done" };
-  if (isStaff) {
+  if (staff) {
     if (req.query.employee) scope.assignedTo = req.query.employee;
   } else {
     scope.assignedTo = req.user._id; // employees are locked to their own tasks
@@ -93,8 +94,12 @@ export const portfolio = async (req, res) => {
   res.json(tasks);
 };
 
-// POST /api/tasks  — create a task. assignedTo defaults to the creator.
+// POST /api/tasks  — create a task. Only admin / HR / project managers may create
+// and assign tasks; employees can update their own but not create new ones.
 export const createTask = async (req, res) => {
+  if (!isStaff(req.user)) {
+    return res.status(403).json({ message: "Only admin, HR or a project manager can create tasks" });
+  }
   const { title, assignedTo, dueDate, startDate, description, priority, projectId, parentTask } = req.body;
   if (!title || !title.trim()) return res.status(400).json({ message: "Title is required" });
 

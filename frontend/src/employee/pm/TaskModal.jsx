@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import Modal from "../../panel/Modal";
 import { fetchAssignableUsers, createTask, updateTask } from "../../api/pm";
-import { STATUSES, PRIORITIES, STATUS_LABEL, ymd } from "./pmUtils";
+import { STATUSES, PRIORITIES, STATUS_LABEL, ymdhm } from "./pmUtils";
 
 // Create or edit a task. Pass `task` to edit, or `defaults` (e.g. { projectId })
 // to seed a new one. `projectLocked` hides the project note when inside a project.
@@ -15,8 +15,8 @@ export default function TaskModal({ task, defaults = {}, projects = [], onClose,
     projectId: task?.projectId?._id || task?.projectId || defaults.projectId || "",
     priority: task?.priority || "medium",
     status: task?.status || "todo",
-    startDate: task?.startDate ? ymd(task.startDate) : "",
-    dueDate: task?.dueDate ? ymd(task.dueDate) : "",
+    startDate: task?.startDate ? ymdhm(task.startDate) : "",
+    dueDate: task?.dueDate ? ymdhm(task.dueDate) : "",
     timeSpent: task?.timeSpent || 0,
   });
   const [saving, setSaving] = useState(false);
@@ -103,12 +103,12 @@ export default function TaskModal({ task, defaults = {}, projects = [], onClose,
           </select>
         </div>
         <div className="form-field">
-          <label>Start date</label>
-          <input type="date" value={form.startDate} onChange={set("startDate")} />
+          <label>Start date &amp; time</label>
+          <input type="datetime-local" value={form.startDate} onChange={set("startDate")} />
         </div>
         <div className="form-field">
-          <label>Due date</label>
-          <input type="date" value={form.dueDate} onChange={set("dueDate")} />
+          <label>End date &amp; time</label>
+          <input type="datetime-local" value={form.dueDate} onChange={set("dueDate")} />
         </div>
         <div className="form-field">
           <label>Time spent (minutes)</label>

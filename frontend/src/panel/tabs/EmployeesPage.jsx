@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { fetchEmployees, createEmployee, updateEmployee, deleteEmployee, uploadFile } from "../../api/panel";
 import { fmtDate } from "../utils";
+import { ROLE_LABEL } from "../../roles";
 import Avatar from "../Avatar";
 import Modal from "../Modal";
 
@@ -22,8 +23,9 @@ export default function EmployeesPage() {
 
   const load = () => {
     setLoading(true);
-    fetchEmployees({ role: "employee" }) // directory shows employees only — not admin/HR
-      .then(setList)
+    // Directory shows the workforce (employees + project managers), not admin/HR.
+    fetchEmployees()
+      .then((all) => setList(all.filter((e) => e.role === "employee" || e.role === "project_manager")))
       .catch((e) => setError(e.response?.data?.message || e.message))
       .finally(() => setLoading(false));
   };
@@ -133,7 +135,7 @@ export default function EmployeesPage() {
                   <td>{e.designation || "—"}</td>
                   <td>{e.department || "—"}</td>
                   <td>{fmtDate(e.birthdate)}</td>
-                  <td><span className={`badge ${e.role === "employee" ? "badge-neutral" : "badge-black"}`}>{e.role}</span></td>
+                  <td><span className={`badge ${e.role === "employee" ? "badge-neutral" : "badge-black"}`}>{ROLE_LABEL[e.role] || e.role}</span></td>
                   <td style={{ whiteSpace: "nowrap" }}>
                     <button className="btn btn-ghost btn-sm" onClick={() => openEdit(e)}>Edit</button>{" "}
                     <button className="btn btn-danger btn-sm" onClick={() => remove(e)}>Delete</button>
@@ -178,6 +180,7 @@ export default function EmployeesPage() {
               <label>Role</label>
               <select value={form.role} onChange={set("role")}>
                 <option value="employee">Employee</option>
+                <option value="project_manager">Project Manager</option>
                 <option value="hr">HR</option>
                 <option value="admin">Admin</option>
               </select>

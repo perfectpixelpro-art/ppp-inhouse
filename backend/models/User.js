@@ -1,7 +1,11 @@
 import mongoose from "mongoose";
 import bcrypt from "bcryptjs";
 
-export const ROLES = ["admin", "hr", "employee"];
+export const ROLES = ["admin", "hr", "employee", "project_manager"];
+
+// Roles that can see EVERY employee's tasks / projects / portfolio in the
+// Project Management module (org-wide visibility), used across the PM controllers.
+export const PM_VIEWER_ROLES = ["admin", "hr", "project_manager"];
 
 const userSchema = new mongoose.Schema(
   {

@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { fetchPortfolio } from "../../api/pm";
 import { useAuth } from "../../context/AuthContext";
+import { canSeeAllPM } from "../../roles";
 import { fmtMins, fmtDateTime } from "./pmUtils";
 import "./pm.css";
 
@@ -11,7 +12,7 @@ import "./pm.css";
 // actually there. Completion is shown as date + time and sorted by it.
 export default function Portfolio() {
   const { user } = useAuth();
-  const isStaff = user?.role === "admin" || user?.role === "hr";
+  const isStaff = canSeeAllPM(user?.role);
 
   const [rows, setRows] = useState([]);
   const [loading, setLoading] = useState(true);

@@ -1,15 +1,16 @@
 import { useEffect, useState } from "react";
 import { fetchMyTasks, fetchAllTasks, fetchProjects } from "../../api/pm";
 import { useAuth } from "../../context/AuthContext";
+import { canSeeAllPM } from "../../roles";
 import TaskViews from "./views/TaskViews";
 import TaskModal from "./TaskModal";
 
 // Home — List / Timeline / Calendar views of tasks. The List view is split into
-// Today / Upcoming / Overdue tabs. Admin/HR see every employee's tasks (with an
-// assignee column); employees see only their own.
+// Today / Upcoming / Overdue tabs. Admin/HR/Project-Manager see every employee's
+// tasks (with an assignee column); employees see only their own.
 export default function PMHome() {
   const { user } = useAuth();
-  const isStaff = user?.role === "admin" || user?.role === "hr";
+  const isStaff = canSeeAllPM(user?.role);
   const [tasks, setTasks] = useState([]);
   const [projects, setProjects] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -29,7 +30,7 @@ export default function PMHome() {
           <h2>Home</h2>
           <p>{isStaff ? "All tasks — by list, timeline or calendar" : "Your tasks — by list, timeline or calendar"}</p>
         </div>
-        <button className="btn btn-primary" onClick={() => setModal({ defaults: {} })}>+ New Task</button>
+        {isStaff && <button className="btn btn-primary" onClick={() => setModal({ defaults: {} })}>+ New Task</button>}
       </div>
 
       {loading ? (

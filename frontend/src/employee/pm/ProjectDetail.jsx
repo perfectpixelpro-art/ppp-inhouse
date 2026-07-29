@@ -1,6 +1,8 @@
 import { useCallback, useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { fetchProject, fetchProjectTasks, fetchProjectStats, deleteProject } from "../../api/pm";
+import { useAuth } from "../../context/AuthContext";
+import { canSeeAllPM } from "../../roles";
 import Avatar from "../../panel/Avatar";
 import TaskListView from "./views/TaskListView";
 import GanttView from "./views/GanttView";
@@ -15,6 +17,8 @@ const TAB_LABEL = { overview: "Overview", timeline: "Timeline", dashboard: "Dash
 export default function ProjectDetail() {
   const { id } = useParams();
   const nav = useNavigate();
+  const { user } = useAuth();
+  const canManage = canSeeAllPM(user?.role);
   const [project, setProject] = useState(null);
   const [tasks, setTasks] = useState([]);
   const [stats, setStats] = useState(null);
@@ -59,9 +63,11 @@ export default function ProjectDetail() {
           <h2>{project.name}</h2>
           <p>{project.description || "No description"}</p>
         </div>
-        <div style={{ display: "flex", gap: 8 }}>
-          <button className="btn btn-primary" onClick={() => setModal({ defaults: { projectId: id } })}>+ Add Task</button>
-        </div>
+        {canManage && (
+          <div style={{ display: "flex", gap: 8 }}>
+            <button className="btn btn-primary" onClick={() => setModal({ defaults: { projectId: id } })}>+ Add Task</button>
+          </div>
+        )}
       </div>
 
       <div className="task-tabs pm-proj-tabs">
@@ -97,7 +103,7 @@ export default function ProjectDetail() {
             <div className="ov-label">All tasks</div>
             <TaskListView tasks={tasks} onEdit={(t) => setModal({ task: t })} onChanged={upsert} showProject={false} showAssignee />
           </div>
-          <button className="btn btn-ghost btn-sm ov-danger" onClick={removeProject}>Delete project</button>
+          {canManage && <button className="btn btn-ghost btn-sm ov-danger" onClick={removeProject}>Delete project</button>}
         </div>
       )}
 
