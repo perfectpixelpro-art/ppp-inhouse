@@ -131,8 +131,9 @@
 .pm-cal-task { text-align: left; border: none; border-left: 3px solid var(--gray-400,#9ca3af); background: var(--gray-50,#f9fafb); border-radius: 4px; padding: 2px 5px; font-size: .7rem; cursor: pointer; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 
 /* ===== Portfolio ===== */
-.pf-filters { display: flex; gap: 10px; margin-bottom: 1rem; }
+.pf-filters { display: flex; gap: 10px; align-items: center; margin-bottom: 1rem; flex-wrap: wrap; }
 .pf-filters select { min-width: 180px; }
+.pf-total { margin-left: auto; color: var(--gray-500, #6b7280); font-size: 0.85rem; }
 th.sortable { cursor: pointer; user-select: none; }
 
 @media (max-width: 720px) {

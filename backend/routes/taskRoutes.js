@@ -2,6 +2,7 @@ import { Router } from "express";
 import {
   assignableUsers,
   myTasks,
+  allTasks,
   assignedByMe,
   projectTasks,
   portfolio,
@@ -19,6 +20,7 @@ router.use(protect);
 
 router.get("/assignable", assignableUsers);
 router.get("/mine", myTasks);
+router.get("/all", allTasks);
 router.get("/assigned", assignedByMe);
 router.get("/portfolio", portfolio);
 router.get("/", projectTasks); // ?project=:id — tasks in a project

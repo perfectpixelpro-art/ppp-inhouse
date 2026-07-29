@@ -4,14 +4,21 @@ import User from "../models/User.js";
 
 const PERSON = "name email designation photo department";
 
-const isMember = (project, userId) =>
-  String(project.createdBy) === String(userId) || project.members.some((m) => String(m._id || m) === String(userId));
+const isStaff = (user) => user.role === "admin" || user.role === "hr";
 
-// GET /api/projects  — projects I'm a member of (or created), with light task stats.
+// Membership check that admin/HR always pass (they can see everything).
+const canView = (project, user) =>
+  isStaff(user) ||
+  String(project.createdBy) === String(user._id) ||
+  project.members.some((m) => String(m._id || m) === String(user._id));
+
+// GET /api/projects  — projects I'm a member of (or created); admin/HR see all.
+// Each carries light task stats.
 export const listProjects = async (req, res) => {
-  const projects = await Project.find({
-    $or: [{ members: req.user._id }, { createdBy: req.user._id }],
-  })
+  const filter = isStaff(req.user)
+    ? {}
+    : { $or: [{ members: req.user._id }, { createdBy: req.user._id }] };
+  const projects = await Project.find(filter)
     .populate("members", PERSON)
     .populate("createdBy", PERSON)
     .sort({ createdAt: -1 });
@@ -49,7 +56,7 @@ export const createProject = async (req, res) => {
 export const getProject = async (req, res) => {
   const project = await Project.findById(req.params.id).populate("members", PERSON).populate("createdBy", PERSON);
   if (!project) return res.status(404).json({ message: "Project not found" });
-  if (!isMember(project, req.user._id)) return res.status(403).json({ message: "Not a member of this project" });
+  if (!canView(project, req.user)) return res.status(403).json({ message: "Not a member of this project" });
   res.json(project);
 };
 
@@ -57,7 +64,7 @@ export const getProject = async (req, res) => {
 export const projectStats = async (req, res) => {
   const project = await Project.findById(req.params.id).select("members createdBy");
   if (!project) return res.status(404).json({ message: "Project not found" });
-  if (!isMember(project, req.user._id)) return res.status(403).json({ message: "Not a member of this project" });
+  if (!canView(project, req.user)) return res.status(403).json({ message: "Not a member of this project" });
 
   const tasks = await Task.find({ projectId: project._id }).select("status dueDate");
   const now = new Date();
@@ -74,7 +81,7 @@ export const projectStats = async (req, res) => {
 export const updateProject = async (req, res) => {
   const project = await Project.findById(req.params.id);
   if (!project) return res.status(404).json({ message: "Project not found" });
-  if (!isMember(project, req.user._id)) return res.status(403).json({ message: "Not a member of this project" });
+  if (!canView(project, req.user)) return res.status(403).json({ message: "Not a member of this project" });
 
   const { name, description, members } = req.body;
   if (name !== undefined) {
@@ -91,12 +98,12 @@ export const updateProject = async (req, res) => {
   res.json(await project.populate("members", PERSON));
 };
 
-// DELETE /api/projects/:id  — creator only; cascades to the project's tasks.
+// DELETE /api/projects/:id  — creator or admin/HR; cascades to the project's tasks.
 export const deleteProject = async (req, res) => {
   const project = await Project.findById(req.params.id);
   if (!project) return res.status(404).json({ message: "Project not found" });
-  if (String(project.createdBy) !== String(req.user._id)) {
-    return res.status(403).json({ message: "Only the project creator can delete it" });
+  if (!isStaff(req.user) && String(project.createdBy) !== String(req.user._id)) {
+    return res.status(403).json({ message: "Only the project creator or an admin can delete it" });
   }
   await Task.deleteMany({ projectId: project._id });
   await project.deleteOne();

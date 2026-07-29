@@ -28,7 +28,9 @@ function panelTabRoutes(role) {
     <>
       <Route index element={<Navigate to={home} replace />} />
       {tabs.map((t) => (
-        <Route key={t.to} path={t.to} element={t.element} />
+        <Route key={t.to} path={t.to} element={t.element}>
+          {t.children}
+        </Route>
       ))}
       <Route path="*" element={<Navigate to={home} replace />} />
     </>

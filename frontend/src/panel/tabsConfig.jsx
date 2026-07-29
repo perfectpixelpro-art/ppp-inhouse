@@ -12,6 +12,24 @@ import BirthdaysPage from "./tabs/BirthdaysPage";
 import PolicyEditPage from "./tabs/PolicyEditPage";
 import GalleryManagePage from "./tabs/GalleryManagePage";
 import NoticesPage from "./tabs/NoticesPage";
+import { Route } from "react-router-dom";
+import ProjectModule from "../employee/pm/ProjectModule";
+import PMHome from "../employee/pm/PMHome";
+import PMMyTasks from "../employee/pm/PMMyTasks";
+import ProjectsList from "../employee/pm/ProjectsList";
+import ProjectDetail from "../employee/pm/ProjectDetail";
+import Portfolio from "../employee/pm/Portfolio";
+
+// Nested routes for the Project Management module (shared by admin & HR panels).
+const projectChildren = (
+  <>
+    <Route index element={<PMHome />} />
+    <Route path="my-tasks" element={<PMMyTasks />} />
+    <Route path="projects" element={<ProjectsList />} />
+    <Route path="projects/:id" element={<ProjectDetail />} />
+    <Route path="portfolio" element={<Portfolio />} />
+  </>
+);
 
 // Single source of truth for both the sidebar nav and the router.
 // `roles` controls which panels a tab appears in. Financial tabs
@@ -25,6 +43,7 @@ export const TABS = [
   { to: "special-days", label: "Special Days", icon: "🎉", roles: ["admin", "hr"], element: <SpecialDaysPage /> },
   { to: "expenses", label: "Expenses", icon: "🧾", roles: ["admin", "hr"], element: <ExpensesPage /> },
   { to: "leave-applications", label: "Leave Applications", icon: "📝", roles: ["admin", "hr"], element: <LeaveApplicationsPage /> },
+  { to: "project", label: "Project Management", icon: "📁", roles: ["admin", "hr"], element: <ProjectModule />, children: projectChildren },
   { to: "attendance", label: "In / Out", icon: "⏰", roles: ["admin", "hr"], element: <AttendancePage /> },
   { to: "documents", label: "Documents", icon: "📁", roles: ["admin", "hr"], element: <DocumentsPage /> },
   { to: "policy", label: "Policy", icon: "📜", roles: ["admin", "hr"], element: <PolicyEditPage /> },

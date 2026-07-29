@@ -10,6 +10,7 @@ export const deleteProject = (id) => client.delete(`/projects/${id}`).then((r) =
 
 // --- Tasks ---
 export const fetchMyTasks = () => client.get("/tasks/mine").then((r) => r.data);
+export const fetchAllTasks = () => client.get("/tasks/all").then((r) => r.data); // admin/HR only
 export const fetchProjectTasks = (projectId) => client.get("/tasks", { params: { project: projectId } }).then((r) => r.data);
 export const fetchPortfolio = (params) => client.get("/tasks/portfolio", { params }).then((r) => r.data);
 export const fetchAssignableUsers = () => client.get("/tasks/assignable").then((r) => r.data);

@@ -1,16 +1,27 @@
-import { NavLink, Outlet, useNavigate } from "react-router-dom";
+import { NavLink, Outlet, useNavigate, useLocation } from "react-router-dom";
 import { useState } from "react";
 import { useAuth } from "../context/AuthContext";
 import Avatar from "./Avatar";
 import { tabsForRole } from "./tabsConfig";
 import "./panel.css";
+import "../employee/pm/pm.css";
 import logo from "../../public/logo.png"
+
+// Project Management sub-items — shown in the sidebar only inside that section.
+const PROJECT_SUBTABS = [
+  { to: "project", label: "Home", icon: "🏠", end: true },
+  { to: "project/my-tasks", label: "My Tasks", icon: "✅" },
+  { to: "project/projects", label: "Projects", icon: "📁" },
+  { to: "project/portfolio", label: "Portfolio", icon: "📊" },
+];
 
 export default function PanelLayout() {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
   const [open, setOpen] = useState(false);
   const tabs = tabsForRole(user?.role);
+  const inProject = location.pathname.startsWith(`/${user?.role}/project`);
 
   const handleLogout = () => {
     logout();
@@ -25,15 +36,35 @@ export default function PanelLayout() {
         </div>
         <nav className="panel-nav">
           {tabs.map((t) => (
-            <NavLink
-              key={t.to}
-              to={t.to}
-              className={({ isActive }) => `panel-link ${isActive ? "active" : ""}`}
-              onClick={() => setOpen(false)}
-            >
-              <span className="panel-link-icon">{t.icon}</span>
-              <span>{t.label}</span>
-            </NavLink>
+            <div key={t.to}>
+              <NavLink
+                to={t.to}
+                end={t.to === "project"}
+                className={({ isActive }) => `panel-link ${isActive ? "active" : ""}`}
+                onClick={() => setOpen(false)}
+              >
+                <span className="panel-link-icon">{t.icon}</span>
+                <span>{t.label}</span>
+              </NavLink>
+
+              {/* Project Management sub-nav — visible only inside that section */}
+              {t.to === "project" && inProject && (
+                <div className="panel-subnav">
+                  {PROJECT_SUBTABS.map((s) => (
+                    <NavLink
+                      key={s.to}
+                      to={s.to}
+                      end={s.end}
+                      className={({ isActive }) => `panel-sublink ${isActive ? "active" : ""}`}
+                      onClick={() => setOpen(false)}
+                    >
+                      <span className="panel-link-icon">{s.icon}</span>
+                      <span>{s.label}</span>
+                    </NavLink>
+                  ))}
+                </div>
+              )}
+            </div>
           ))}
         </nav>
       </aside>

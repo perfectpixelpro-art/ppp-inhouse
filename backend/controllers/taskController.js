@@ -6,8 +6,13 @@ import { TASK_STATUS, TASK_PRIORITY } from "../models/Task.js";
 const PERSON = "name email designation photo department";
 const PROJECT = "name";
 
-// Am I allowed to touch this task? Assignee, creator, or a member of its project.
-const canTouch = async (task, userId) => {
+const isStaff = (user) => user.role === "admin" || user.role === "hr";
+
+// Am I allowed to touch this task? Admin/HR always; otherwise the assignee, the
+// creator, or a member of its project.
+const canTouch = async (task, user) => {
+  if (isStaff(user)) return true;
+  const userId = user._id;
   if (String(task.assignedTo) === String(userId) || String(task.assignedBy) === String(userId)) return true;
   if (task.projectId) {
     const p = await Project.findById(task.projectId).select("members createdBy");
@@ -31,6 +36,18 @@ export const myTasks = async (req, res) => {
   res.json(tasks);
 };
 
+// GET /api/tasks/all  — every task in the org (admin/HR only). Powers the panel
+// Home / My Tasks views so staff see everyone's work.
+export const allTasks = async (req, res) => {
+  if (!isStaff(req.user)) return res.status(403).json({ message: "Forbidden" });
+  const tasks = await Task.find({})
+    .populate("assignedTo", PERSON)
+    .populate("assignedBy", PERSON)
+    .populate("projectId", PROJECT)
+    .sort({ status: 1, dueDate: 1, createdAt: -1 });
+  res.json(tasks);
+};
+
 // GET /api/tasks/assigned  — tasks I assigned to other people.
 export const assignedByMe = async (req, res) => {
   const tasks = await Task.find({ assignedBy: req.user._id })
@@ -46,7 +63,7 @@ export const projectTasks = async (req, res) => {
   if (!project) return res.status(400).json({ message: "project id is required" });
   const p = await Project.findById(project).select("members createdBy");
   if (!p) return res.status(404).json({ message: "Project not found" });
-  const member = String(p.createdBy) === String(req.user._id) || p.members.some((m) => String(m) === String(req.user._id));
+  const member = isStaff(req.user) || String(p.createdBy) === String(req.user._id) || p.members.some((m) => String(m) === String(req.user._id));
   if (!member) return res.status(403).json({ message: "Not a member of this project" });
 
   const tasks = await Task.find({ projectId: project })
@@ -55,23 +72,18 @@ export const projectTasks = async (req, res) => {
   res.json(tasks);
 };
 
-// GET /api/tasks/portfolio?employee=&project=  — completed tasks across projects
-// I can see (projects I'm in, plus my own standalone tasks). Sorted newest-done first.
+// GET /api/tasks/portfolio?employee=&project=  — completed tasks.
+// Employees see ONLY their own completed tasks. Admin/HR see everyone's, and may
+// filter by employee. Both may filter by project. Sorted newest-completed first.
 export const portfolio = async (req, res) => {
-  const myProjects = await Project.find({
-    $or: [{ members: req.user._id }, { createdBy: req.user._id }],
-  }).select("_id");
-  const projectIds = myProjects.map((p) => p._id);
+  const isStaff = ["admin", "hr"].includes(req.user.role);
 
-  const scope = {
-    status: "done",
-    $or: [
-      { projectId: { $in: projectIds } },
-      { assignedTo: req.user._id },
-      { assignedBy: req.user._id },
-    ],
-  };
-  if (req.query.employee) scope.assignedTo = req.query.employee;
+  const scope = { status: "done" };
+  if (isStaff) {
+    if (req.query.employee) scope.assignedTo = req.query.employee;
+  } else {
+    scope.assignedTo = req.user._id; // employees are locked to their own tasks
+  }
   if (req.query.project) scope.projectId = req.query.project;
 
   const tasks = await Task.find(scope)
@@ -94,7 +106,7 @@ export const createTask = async (req, res) => {
   if (projectId) {
     const p = await Project.findById(projectId).select("members createdBy");
     if (!p) return res.status(404).json({ message: "Project not found" });
-    const member = String(p.createdBy) === String(req.user._id) || p.members.some((m) => String(m) === String(req.user._id));
+    const member = isStaff(req.user) || String(p.createdBy) === String(req.user._id) || p.members.some((m) => String(m) === String(req.user._id));
     if (!member) return res.status(403).json({ message: "Not a member of this project" });
   }
 
@@ -118,7 +130,7 @@ export const createTask = async (req, res) => {
 export const updateTask = async (req, res) => {
   const task = await Task.findById(req.params.id);
   if (!task) return res.status(404).json({ message: "Task not found" });
-  if (!(await canTouch(task, req.user._id))) return res.status(403).json({ message: "Not your task" });
+  if (!(await canTouch(task, req.user))) return res.status(403).json({ message: "Not your task" });
 
   const b = req.body;
   if (b.title !== undefined) {
@@ -153,7 +165,7 @@ export const updateStatus = async (req, res) => {
 
   const task = await Task.findById(req.params.id);
   if (!task) return res.status(404).json({ message: "Task not found" });
-  if (!(await canTouch(task, req.user._id))) return res.status(403).json({ message: "Not your task" });
+  if (!(await canTouch(task, req.user))) return res.status(403).json({ message: "Not your task" });
 
   task.status = status; // completedAt handled by the model's pre-save hook
   await task.save();

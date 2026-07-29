@@ -1,80 +1,98 @@
 import { useEffect, useMemo, useState } from "react";
-import { fetchPortfolio, fetchProjects, fetchAssignableUsers } from "../../api/pm";
-import { fmtMins, fmtDayYear } from "./pmUtils";
+import { fetchPortfolio } from "../../api/pm";
+import { useAuth } from "../../context/AuthContext";
+import { fmtMins, fmtDateTime } from "./pmUtils";
+import "./pm.css";
 
+// Portfolio of completed tasks.
+//  - Employees see only their own completed tasks.
+//  - Admin/HR (isStaff) see everyone's, with an employee filter.
+// Filter options are derived from the returned data so they always match what's
+// actually there. Completion is shown as date + time and sorted by it.
 export default function Portfolio() {
+  const { user } = useAuth();
+  const isStaff = user?.role === "admin" || user?.role === "hr";
+
   const [rows, setRows] = useState([]);
-  const [projects, setProjects] = useState([]);
-  const [people, setPeople] = useState([]);
   const [loading, setLoading] = useState(true);
   const [employee, setEmployee] = useState("");
   const [project, setProject] = useState("");
-  const [sortAsc, setSortAsc] = useState(false); // by completion date, newest first
-
-  useEffect(() => {
-    fetchProjects().then(setProjects).catch(() => {});
-    fetchAssignableUsers().then(setPeople).catch(() => {});
-  }, []);
+  const [sortAsc, setSortAsc] = useState(false); // by completion date-time, newest first
 
   useEffect(() => {
     setLoading(true);
-    const params = {};
-    if (employee) params.employee = employee;
-    if (project) params.project = project;
-    fetchPortfolio(params).then(setRows).finally(() => setLoading(false));
-  }, [employee, project]);
+    fetchPortfolio().then(setRows).finally(() => setLoading(false));
+  }, []);
 
-  const sorted = useMemo(() => {
-    const s = [...rows].sort((a, b) => new Date(a.completedAt || 0) - new Date(b.completedAt || 0));
-    return sortAsc ? s : s.reverse();
-  }, [rows, sortAsc]);
+  // Distinct employees / projects present in the data → filter dropdowns.
+  const employees = useMemo(() => {
+    const m = new Map();
+    rows.forEach((t) => t.assignedTo && m.set(t.assignedTo._id, t.assignedTo.name));
+    return [...m.entries()].sort((a, b) => a[1].localeCompare(b[1]));
+  }, [rows]);
+  const projects = useMemo(() => {
+    const m = new Map();
+    rows.forEach((t) => t.projectId && m.set(t.projectId._id, t.projectId.name));
+    return [...m.entries()].sort((a, b) => a[1].localeCompare(b[1]));
+  }, [rows]);
+
+  const view = useMemo(() => {
+    let out = rows;
+    if (isStaff && employee) out = out.filter((t) => t.assignedTo?._id === employee);
+    if (project) out = out.filter((t) => t.projectId?._id === project);
+    out = [...out].sort((a, b) => new Date(a.completedAt || 0) - new Date(b.completedAt || 0));
+    return sortAsc ? out : out.reverse();
+  }, [rows, isStaff, employee, project, sortAsc]);
 
   return (
     <div>
       <div className="page-head">
         <div>
           <h2>Portfolio</h2>
-          <p>Completed tasks across projects</p>
+          <p>{isStaff ? "Completed tasks across all employees" : "Tasks you've completed"}</p>
         </div>
       </div>
 
       <div className="pf-filters">
-        <select value={employee} onChange={(e) => setEmployee(e.target.value)}>
-          <option value="">All employees</option>
-          {people.map((p) => <option key={p._id} value={p._id}>{p.name}</option>)}
-        </select>
+        {isStaff && (
+          <select value={employee} onChange={(e) => setEmployee(e.target.value)}>
+            <option value="">All employees</option>
+            {employees.map(([id, name]) => <option key={id} value={id}>{name}</option>)}
+          </select>
+        )}
         <select value={project} onChange={(e) => setProject(e.target.value)}>
           <option value="">All projects</option>
-          {projects.map((p) => <option key={p._id} value={p._id}>{p.name}</option>)}
+          {projects.map(([id, name]) => <option key={id} value={id}>{name}</option>)}
         </select>
+        <span className="pf-total">{view.length} task{view.length === 1 ? "" : "s"}</span>
       </div>
 
       {loading ? (
         <div className="loading">Loading…</div>
-      ) : sorted.length === 0 ? (
-        <div className="pm-empty">No completed tasks match these filters.</div>
+      ) : view.length === 0 ? (
+        <div className="pm-empty">No completed tasks{isStaff ? "" : " yet"}.</div>
       ) : (
         <div className="table-wrap">
           <table className="data">
             <thead>
               <tr>
-                <th>Employee</th>
+                {isStaff && <th>Employee</th>}
                 <th>Task</th>
                 <th>Project</th>
                 <th>Time taken</th>
                 <th className="sortable" onClick={() => setSortAsc((s) => !s)}>
-                  Completed {sortAsc ? "▲" : "▼"}
+                  Completed (date &amp; time) {sortAsc ? "▲" : "▼"}
                 </th>
               </tr>
             </thead>
             <tbody>
-              {sorted.map((t) => (
+              {view.map((t) => (
                 <tr key={t._id}>
-                  <td>{t.assignedTo?.name || "—"}</td>
+                  {isStaff && <td>{t.assignedTo?.name || "—"}</td>}
                   <td>{t.title}</td>
                   <td>{t.projectId?.name || "—"}</td>
                   <td>⏱ {fmtMins(t.timeSpent)}</td>
-                  <td>{fmtDayYear(t.completedAt)}</td>
+                  <td>{fmtDateTime(t.completedAt)}</td>
                 </tr>
               ))}
             </tbody>
