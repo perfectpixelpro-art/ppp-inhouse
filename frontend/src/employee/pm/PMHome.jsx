@@ -4,6 +4,7 @@ import { useAuth } from "../../context/AuthContext";
 import { canSeeAllPM } from "../../roles";
 import TaskViews from "./views/TaskViews";
 import TaskModal from "./TaskModal";
+import TaskDetail from "./TaskDetail";
 
 // Home — List / Timeline / Calendar views of tasks. The List view is split into
 // Today / Upcoming / Overdue tabs. Admin/HR/Project-Manager see every employee's
@@ -14,7 +15,8 @@ export default function PMHome() {
   const [tasks, setTasks] = useState([]);
   const [projects, setProjects] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [modal, setModal] = useState(null); // {task} | {defaults} | null
+  const [modal, setModal] = useState(null); // create form: {defaults} | null
+  const [detailId, setDetailId] = useState(null); // open task detail panel
 
   useEffect(() => {
     (isStaff ? fetchAllTasks() : fetchMyTasks()).then(setTasks).finally(() => setLoading(false));
@@ -38,7 +40,7 @@ export default function PMHome() {
       ) : (
         <TaskViews
           tasks={tasks}
-          onEdit={(t) => setModal({ task: t })}
+          onEdit={(t) => setDetailId(t._id)}
           onChanged={upsert}
           listTabs={["today", "upcoming", "overdue"]}
           showProject
@@ -48,12 +50,15 @@ export default function PMHome() {
 
       {modal && (
         <TaskModal
-          task={modal.task}
           defaults={modal.defaults}
           projects={projects}
           onClose={() => setModal(null)}
           onSaved={upsert}
         />
+      )}
+
+      {detailId && (
+        <TaskDetail id={detailId} onClose={() => setDetailId(null)} onChanged={(u) => u && upsert(u)} />
       )}
     </div>
   );

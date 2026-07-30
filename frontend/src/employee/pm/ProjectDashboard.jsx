@@ -1,11 +1,13 @@
 import { PieChart, Pie, Cell, BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Legend } from "recharts";
-import { STATUS_LABEL, STATUS_COLOR } from "./pmUtils";
+import { STATUS_LABEL, STATUS_COLOR, STATUSES } from "./pmUtils";
 
 // Dashboard tab: stat tiles + a status pie + a per-status bar. props: stats {total, done, overdue, byStatus}
 export default function ProjectDashboard({ stats }) {
   if (!stats) return <div className="loading">Loading…</div>;
   const pct = stats.total ? Math.round((stats.done / stats.total) * 100) : 0;
-  const data = ["todo", "in_progress", "done"].map((s) => ({ key: s, name: STATUS_LABEL[s], value: stats.byStatus?.[s] || 0, color: STATUS_COLOR[s] }));
+  const data = STATUSES
+    .map((s) => ({ key: s, name: STATUS_LABEL[s], value: stats.byStatus?.[s] || 0, color: STATUS_COLOR[s] }))
+    .filter((d) => d.value > 0);
   const hasData = stats.total > 0;
 
   return (

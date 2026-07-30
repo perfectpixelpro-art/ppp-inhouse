@@ -21,3 +21,21 @@ export const uploadImage = multer({
   fileFilter: imageFilter,
   limits: { fileSize: 5 * 1024 * 1024 }, // 5 MB
 });
+
+// Broader upload for review submissions: images, video, PDF, Office docs, text.
+const attachmentFilter = (req, file, cb) => {
+  const ok =
+    /^(image|video)\//.test(file.mimetype) ||
+    /(pdf|msword|officedocument|ms-excel|ms-powerpoint|text\/|zip|csv)/.test(file.mimetype);
+  cb(ok ? null : new Error("Unsupported file type"), ok);
+};
+
+export const uploadAttachment = multer({
+  storage,
+  fileFilter: attachmentFilter,
+  limits: { fileSize: 50 * 1024 * 1024 }, // 50 MB (videos)
+});
+
+// Rough bucket for the frontend to render (thumbnail / player / link).
+export const fileKind = (mimetype = "") =>
+  mimetype.startsWith("image/") ? "image" : mimetype.startsWith("video/") ? "video" : "file";

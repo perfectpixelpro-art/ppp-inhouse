@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { fetchPortfolio } from "../../api/pm";
 import { useAuth } from "../../context/AuthContext";
 import { canSeeAllPM } from "../../roles";
-import { fmtMins, fmtDateTime } from "./pmUtils";
+import { fmtMins, fmtMs, fmtDateTime } from "./pmUtils";
 import "./pm.css";
 
 // Portfolio of completed tasks.
@@ -80,7 +80,9 @@ export default function Portfolio() {
                 {isStaff && <th>Employee</th>}
                 <th>Task</th>
                 <th>Project</th>
+                <th>Assets</th>
                 <th>Time taken</th>
+                <th>Review time</th>
                 <th className="sortable" onClick={() => setSortAsc((s) => !s)}>
                   Completed (date &amp; time) {sortAsc ? "▲" : "▼"}
                 </th>
@@ -92,7 +94,22 @@ export default function Portfolio() {
                   {isStaff && <td>{t.assignedTo?.name || "—"}</td>}
                   <td>{t.title}</td>
                   <td>{t.projectId?.name || "—"}</td>
-                  <td>⏱ {fmtMins(t.timeSpent)}</td>
+                  <td>
+                    {t.submission?.files?.length ? (
+                      <div className="pf-assets">
+                        {t.submission.files.slice(0, 4).map((f, i) =>
+                          f.kind === "image" ? (
+                            <a key={i} href={f.url} target="_blank" rel="noreferrer" className="pf-thumb"><img src={f.url} alt={f.name || "asset"} /></a>
+                          ) : (
+                            <a key={i} href={f.url} target="_blank" rel="noreferrer" className="pf-fchip" title={f.name}>{f.kind === "video" ? "🎬" : "📄"}</a>
+                          )
+                        )}
+                        {t.submission.files.length > 4 && <span className="pf-more">+{t.submission.files.length - 4}</span>}
+                      </div>
+                    ) : "—"}
+                  </td>
+                  <td>⏱ {t.activeMs ? fmtMs(t.activeMs) : fmtMins(t.timeSpent)}</td>
+                  <td>{fmtMs(t.reviewMs)}</td>
                   <td>{fmtDateTime(t.completedAt)}</td>
                 </tr>
               ))}

@@ -2,6 +2,7 @@ import Project from "../models/Project.js";
 import Task from "../models/Task.js";
 import User from "../models/User.js";
 import { PM_VIEWER_ROLES } from "../models/User.js";
+import { CLOSED_STATUSES } from "../models/Task.js";
 
 const PERSON = "name email designation photo department";
 
@@ -41,16 +42,20 @@ export const createProject = async (req, res) => {
   if (!isStaff(req.user)) {
     return res.status(403).json({ message: "Only admin, HR or a project manager can create projects" });
   }
-  const { name, description, members } = req.body;
+  const { name, description, members, slackChannelId } = req.body;
   if (!name || !name.trim()) return res.status(400).json({ message: "Project name is required" });
 
-  // Always include the creator in the member list, de-duplicated.
+  // Members = the chosen employees + the creator + all admin/HR/project managers,
+  // who are added to every project automatically. De-duplicated.
   const memberSet = new Set((Array.isArray(members) ? members : []).map(String));
   memberSet.add(String(req.user._id));
+  const staffUsers = await User.find({ role: { $in: PM_VIEWER_ROLES }, active: true }).select("_id");
+  staffUsers.forEach((u) => memberSet.add(String(u._id)));
 
   const project = await Project.create({
     name: name.trim(),
     description: description?.trim() || "",
+    slackChannelId: (slackChannelId || "").trim(),
     members: [...memberSet],
     createdBy: req.user._id,
   });
@@ -73,13 +78,41 @@ export const projectStats = async (req, res) => {
 
   const tasks = await Task.find({ projectId: project._id }).select("status dueDate");
   const now = new Date();
-  const byStatus = { todo: 0, in_progress: 0, done: 0 };
+  const byStatus = { todo: 0, in_progress: 0, in_review: 0, approved: 0, done: 0 };
   let overdue = 0;
+  let done = 0; // "completed" = closed (approved or done)
   for (const t of tasks) {
     byStatus[t.status] = (byStatus[t.status] || 0) + 1;
-    if (t.status !== "done" && t.dueDate && new Date(t.dueDate) < now) overdue++;
+    const closed = CLOSED_STATUSES.includes(t.status);
+    if (closed) done++;
+    else if (t.dueDate && new Date(t.dueDate) < now) overdue++;
   }
-  res.json({ total: tasks.length, done: byStatus.done, overdue, byStatus });
+  res.json({ total: tasks.length, done, overdue, byStatus });
+};
+
+// GET /api/projects/:id/assets  — every file submitted across the project's tasks.
+// Members (and staff) only. Staff therefore see all employees' assets.
+export const projectAssets = async (req, res) => {
+  const project = await Project.findById(req.params.id).select("members createdBy");
+  if (!project) return res.status(404).json({ message: "Project not found" });
+  if (!canView(project, req.user)) return res.status(403).json({ message: "Not a member of this project" });
+
+  const tasks = await Task.find({ projectId: project._id, "submission.files.0": { $exists: true } })
+    .populate("assignedTo", "name photo")
+    .select("title assignedTo submission");
+
+  const assets = [];
+  for (const t of tasks) {
+    for (const f of t.submission?.files || []) {
+      assets.push({
+        url: f.url, name: f.name, kind: f.kind,
+        taskId: t._id, taskTitle: t.title,
+        assignee: t.assignedTo, submittedAt: t.submission.submittedAt,
+      });
+    }
+  }
+  assets.sort((a, b) => new Date(b.submittedAt || 0) - new Date(a.submittedAt || 0));
+  res.json(assets);
 };
 
 // PUT /api/projects/:id  — a member may edit name/description/members.
@@ -88,7 +121,8 @@ export const updateProject = async (req, res) => {
   if (!project) return res.status(404).json({ message: "Project not found" });
   if (!canView(project, req.user)) return res.status(403).json({ message: "Not a member of this project" });
 
-  const { name, description, members } = req.body;
+  const { name, description, members, slackChannelId } = req.body;
+  if (slackChannelId !== undefined) project.slackChannelId = (slackChannelId || "").trim();
   if (name !== undefined) {
     if (!name.trim()) return res.status(400).json({ message: "Project name can't be empty" });
     project.name = name.trim();

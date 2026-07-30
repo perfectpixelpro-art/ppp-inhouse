@@ -21,3 +21,15 @@ export const uploadBuffer = (buffer, folder = "ppp") =>
     );
     stream.end(buffer);
   });
+
+// Upload any file (image / video / pdf / doc) — resource_type "auto" lets
+// Cloudinary handle non-image types (videos, raw files).
+export const uploadBufferAuto = (buffer, folder = "ppp") =>
+  new Promise((resolve, reject) => {
+    configure();
+    const stream = cloudinary.uploader.upload_stream(
+      { folder, resource_type: "auto" },
+      (err, result) => (err ? reject(err) : resolve(result.secure_url))
+    );
+    stream.end(buffer);
+  });

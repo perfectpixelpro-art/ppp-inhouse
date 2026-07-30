@@ -10,7 +10,7 @@ export default function ProjectsList() {
   const [people, setPeople] = useState([]);
   const [loading, setLoading] = useState(true);
   const [show, setShow] = useState(false);
-  const [form, setForm] = useState({ name: "", description: "", members: [] });
+  const [form, setForm] = useState({ name: "", description: "", slackChannelId: "", members: [] });
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
   const nav = useNavigate();
@@ -29,7 +29,7 @@ export default function ProjectsList() {
     setSaving(true); setError("");
     try {
       const p = await createProject(form);
-      setShow(false); setForm({ name: "", description: "", members: [] });
+      setShow(false); setForm({ name: "", description: "", slackChannelId: "", members: [] });
       nav(String(p._id));
     } catch (err) {
       setError(err.response?.data?.message || err.message);
@@ -89,6 +89,13 @@ export default function ProjectsList() {
             <div className="form-field full">
               <label>Description</label>
               <textarea rows={2} value={form.description} onChange={(e) => setForm((f) => ({ ...f, description: e.target.value }))} />
+            </div>
+            <div className="form-field full">
+              <label>Slack channel ID *</label>
+              <input type="text" value={form.slackChannelId} required
+                onChange={(e) => setForm((f) => ({ ...f, slackChannelId: e.target.value }))}
+                placeholder="e.g. C06H1SNM01M" />
+              <span className="sr-hint">Task start / review / complete updates for this project post to this channel.</span>
             </div>
             <div className="form-field full">
               <label>Members (you're added automatically)</label>

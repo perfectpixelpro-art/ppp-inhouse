@@ -1,5 +1,15 @@
 import { useMemo } from "react";
-import { startOfDay, dayDiff, fmtDay, STATUS_COLOR, STATUS_LABEL } from "../pmUtils";
+import { startOfDay, dayDiff, fmtDay, fmtMs, isClosed, STATUS_COLOR, STATUS_LABEL } from "../pmUtils";
+import Avatar from "../../../panel/Avatar";
+
+// Row label: assignee avatar + task name + auto time.
+const RowLabel = ({ t }) => (
+  <div className="gantt-label-col" title={t.title}>
+    {t.assignedTo && <Avatar user={t.assignedTo} size={20} />}
+    <span className="gantt-label-title">{t.title}</span>
+    <span className="gantt-label-time">{t.activeMs ? fmtMs(t.activeMs) : (t.startedAt && !isClosed(t) ? "▶" : "")}</span>
+  </div>
+);
 
 const DAY_PX = 30;
 
@@ -46,7 +56,7 @@ export default function GanttView({ tasks, onEdit }) {
     <div className="gantt">
       {scheduled.length > 0 && (
         <div className="gantt-scroll">
-          <div className="gantt-inner" style={{ width: 200 + days * DAY_PX }}>
+          <div className="gantt-inner" style={{ width: 220 + days * DAY_PX }}>
             {/* header */}
             <div className="gantt-head">
               <div className="gantt-label-col">Task</div>
@@ -67,7 +77,7 @@ export default function GanttView({ tasks, onEdit }) {
               const width = Math.max(1, dayDiff(s, e) + 1) * DAY_PX;
               return (
                 <div key={t._id} className="gantt-row">
-                  <div className="gantt-label-col" title={t.title}>{t.title}</div>
+                  <RowLabel t={t} />
                   <div className="gantt-timeline" style={{ width: days * DAY_PX }}>
                     {todayOffset >= 0 && todayOffset < days && (
                       <div className="gantt-today" style={{ left: todayOffset * DAY_PX }} />

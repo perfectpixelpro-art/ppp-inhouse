@@ -2,10 +2,17 @@ import { Router } from "express";
 import path from "path";
 import fs from "fs";
 import { protect } from "../middleware/auth.js";
-import { uploadImage, UPLOAD_DIR } from "../middleware/upload.js";
-import { cloudinaryConfigured, uploadBuffer } from "../services/cloudinary.js";
+import { uploadImage, uploadAttachment, fileKind, UPLOAD_DIR } from "../middleware/upload.js";
+import { cloudinaryConfigured, uploadBuffer, uploadBufferAuto } from "../services/cloudinary.js";
 
 const router = Router();
+
+const saveLocal = (file) => {
+  const ext = path.extname(file.originalname).toLowerCase();
+  const name = `${Date.now()}-${Math.round(Math.random() * 1e9)}${ext}`;
+  fs.writeFileSync(path.join(UPLOAD_DIR, name), file.buffer);
+  return `/uploads/${name}`;
+};
 
 // POST /api/uploads  (any authenticated user) — returns { url }
 // Production: Cloudinary (https CDN URL). Dev fallback: local disk (/uploads/...).
@@ -20,6 +27,19 @@ router.post("/", protect, uploadImage.single("file"), async (req, res) => {
     const name = `${Date.now()}-${Math.round(Math.random() * 1e9)}${ext}`;
     fs.writeFileSync(path.join(UPLOAD_DIR, name), req.file.buffer);
     res.status(201).json({ url: `/uploads/${name}` });
+  } catch (e) {
+    res.status(500).json({ message: "Upload failed: " + e.message });
+  }
+});
+
+// POST /api/uploads/file  — any authenticated user — images / videos / docs.
+// Returns { url, name, kind } for review-submission attachments.
+router.post("/file", protect, uploadAttachment.single("file"), async (req, res) => {
+  if (!req.file) return res.status(400).json({ message: "No file uploaded" });
+  try {
+    const kind = fileKind(req.file.mimetype);
+    const url = cloudinaryConfigured() ? await uploadBufferAuto(req.file.buffer) : saveLocal(req.file);
+    res.status(201).json({ url, name: req.file.originalname, kind });
   } catch (e) {
     res.status(500).json({ message: "Upload failed: " + e.message });
   }

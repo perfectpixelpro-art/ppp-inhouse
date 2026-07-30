@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { fetchProject, fetchProjectTasks, fetchProjectStats, deleteProject } from "../../api/pm";
+import { fetchProject, fetchProjectTasks, fetchProjectStats, fetchProjectAssets, deleteProject } from "../../api/pm";
 import { useAuth } from "../../context/AuthContext";
 import { canSeeAllPM } from "../../roles";
 import Avatar from "../../panel/Avatar";
@@ -8,11 +8,13 @@ import TaskListView from "./views/TaskListView";
 import GanttView from "./views/GanttView";
 import CalendarView from "./views/CalendarView";
 import ProjectDashboard from "./ProjectDashboard";
+import AssetsGrid from "./AssetsGrid";
 import TaskModal from "./TaskModal";
+import TaskDetail from "./TaskDetail";
 import { fmtDayYear } from "./pmUtils";
 
-const TABS = ["overview", "timeline", "dashboard", "calendar"];
-const TAB_LABEL = { overview: "Overview", timeline: "Timeline", dashboard: "Dashboard", calendar: "Calendar" };
+const TABS = ["overview", "timeline", "dashboard", "calendar", "assets"];
+const TAB_LABEL = { overview: "Overview", timeline: "Timeline", dashboard: "Dashboard", calendar: "Calendar", assets: "Assets" };
 
 export default function ProjectDetail() {
   const { id } = useParams();
@@ -22,14 +24,17 @@ export default function ProjectDetail() {
   const [project, setProject] = useState(null);
   const [tasks, setTasks] = useState([]);
   const [stats, setStats] = useState(null);
+  const [assets, setAssets] = useState([]);
   const [tab, setTab] = useState("overview");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [modal, setModal] = useState(null);
+  const [detailId, setDetailId] = useState(null);
 
   const loadTasks = useCallback(() => {
     fetchProjectTasks(id).then(setTasks).catch(() => {});
     fetchProjectStats(id).then(setStats).catch(() => {});
+    fetchProjectAssets(id).then(setAssets).catch(() => {});
   }, [id]);
 
   useEffect(() => {
@@ -101,24 +106,28 @@ export default function ProjectDetail() {
           </div>
           <div className="ov-block">
             <div className="ov-label">All tasks</div>
-            <TaskListView tasks={tasks} onEdit={(t) => setModal({ task: t })} onChanged={upsert} showProject={false} showAssignee />
+            <TaskListView tasks={tasks} onEdit={(t) => setDetailId(t._id)} onChanged={upsert} showProject={false} showAssignee />
           </div>
           {canManage && <button className="btn btn-ghost btn-sm ov-danger" onClick={removeProject}>Delete project</button>}
         </div>
       )}
 
-      {tab === "timeline" && <GanttView tasks={tasks} onEdit={(t) => setModal({ task: t })} />}
+      {tab === "timeline" && <GanttView tasks={tasks} onEdit={(t) => setDetailId(t._id)} />}
       {tab === "dashboard" && <ProjectDashboard stats={stats} />}
-      {tab === "calendar" && <CalendarView tasks={tasks} onEdit={(t) => setModal({ task: t })} />}
+      {tab === "calendar" && <CalendarView tasks={tasks} onEdit={(t) => setDetailId(t._id)} />}
+      {tab === "assets" && <AssetsGrid assets={assets} />}
 
       {modal && (
         <TaskModal
-          task={modal.task}
           defaults={modal.defaults}
           projects={project ? [project] : []}
           onClose={() => setModal(null)}
           onSaved={upsert}
         />
+      )}
+
+      {detailId && (
+        <TaskDetail id={detailId} onClose={() => setDetailId(null)} onChanged={loadTasks} />
       )}
     </div>
   );
