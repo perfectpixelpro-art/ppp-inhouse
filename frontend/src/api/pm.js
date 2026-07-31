@@ -20,10 +20,17 @@ export const addTaskComment = (id, text) => client.post(`/tasks/${id}/comments`,
 export const submitReview = (id, data) => client.post(`/tasks/${id}/submit-review`, data).then((r) => r.data);
 export const requestChanges = (id, note) => client.post(`/tasks/${id}/request-changes`, { note }).then((r) => r.data);
 // Upload any file (image/video/doc) → { url, name, kind }
+const MAX_ATTACHMENT_MB = 500;
 export const uploadAttachment = (file) => {
+  if (file && file.size > MAX_ATTACHMENT_MB * 1024 * 1024) {
+    return Promise.reject(new Error(`This file is ${(file.size / 1048576).toFixed(0)} MB. The limit is ${MAX_ATTACHMENT_MB} MB — please compress or trim it.`));
+  }
   const fd = new FormData();
   fd.append("file", file);
-  return client.post("/uploads/file", fd).then((r) => r.data);
+  return client.post("/uploads/file", fd).then((r) => r.data).catch((e) => {
+    if (e.response?.status === 413) throw new Error(`File too large — the limit is ${MAX_ATTACHMENT_MB} MB.`);
+    throw new Error(e.response?.data?.message || "Upload failed. Please try again.");
+  });
 };
 export const addDependency = (id, data) => client.post(`/tasks/${id}/dependencies`, data).then((r) => r.data);
 export const removeDependency = (id, depId) => client.delete(`/tasks/${id}/dependencies/${depId}`).then((r) => r.data);

@@ -17,6 +17,10 @@ import { celebrationEmail, taskSummaryEmail } from "./services/emailTemplates.js
 
 const IST = { timezone: "Asia/Kolkata" };
 
+// Resend allows 2 emails/sec — pause between bulk sends so none are rejected (429).
+const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+const MAIL_GAP_MS = 600; // ~1.6 emails/sec, safely under the limit
+
 // Email HR each morning about today's birthdays and work anniversaries.
 const mmdd = (d) => { const x = new Date(d); return `${x.getMonth() + 1}-${x.getDate()}`; };
 export const sendBirthdayAnniversary = async () => {
@@ -92,6 +96,7 @@ export const sendDailyTaskDigest = async () => {
     });
     await sendMail({ to: u.email, subject: `📋 Your daily task summary`, html });
     sent++;
+    await sleep(MAIL_GAP_MS); // throttle so Resend (2/sec) doesn't reject the batch
   }
   console.log(`[scheduler] 9 PM task digest — emailed ${sent} employee(s)`);
   return sent;

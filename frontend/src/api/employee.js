@@ -44,8 +44,15 @@ export const setTaskStatus = (id, status) => client.patch(`/tasks/${id}/status`,
 export const deleteTask = (id) => client.delete(`/tasks/${id}`).then((r) => r.data);
 
 // Image upload — returns { url }
+const MAX_IMAGE_MB = 100;
 export const uploadFile = (file) => {
+  if (file && file.size > MAX_IMAGE_MB * 1024 * 1024) {
+    return Promise.reject(new Error(`This image is ${(file.size / 1048576).toFixed(0)} MB. The limit is ${MAX_IMAGE_MB} MB.`));
+  }
   const fd = new FormData();
   fd.append("file", file);
-  return client.post("/uploads", fd).then((r) => r.data);
+  return client.post("/uploads", fd).then((r) => r.data).catch((e) => {
+    if (e.response?.status === 413) throw new Error(`File too large — the limit is ${MAX_IMAGE_MB} MB.`);
+    throw new Error(e.response?.data?.message || "Upload failed. Please try again.");
+  });
 };
