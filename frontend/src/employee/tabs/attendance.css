@@ -213,3 +213,71 @@
   text-overflow: ellipsis;
 }
 .dsr-link:hover { color: var(--red); text-decoration: underline; }
+
+/* In-portal "resume your timer" reminder (forgot after lunch / long break) */
+.resume-reminder {
+  background: #fef3c7;
+  border: 1px solid #fcd34d;
+  color: #92400e;
+  border-radius: 10px;
+  padding: 10px 14px;
+  margin-bottom: 12px;
+  font-size: 0.9rem;
+  font-weight: 600;
+}
+
+/* ---- Records page (full-month history + summary) ---- */
+.rec-controls {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 16px;
+}
+.rec-controls label {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--gray-600);
+}
+.rec-controls select {
+  padding: 7px 12px;
+  border-radius: 8px;
+  border: 1.5px solid var(--gray-200);
+  background: #fff;
+  color: var(--black);
+  font-family: inherit;
+  font-size: 0.9rem;
+}
+.rec-count {
+  margin-left: auto;
+  color: var(--gray-400);
+  font-size: 0.85rem;
+}
+.rec-month-stats {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 12px;
+  margin-top: 16px;
+}
+.rec-month-stats > div {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  background: var(--gray-50);
+  border: 1px solid var(--gray-200);
+  border-radius: 10px;
+  padding: 12px 14px;
+}
+.rec-stat-label {
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  color: var(--gray-400);
+  font-weight: 600;
+}
+.rec-stat-val {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: var(--black);
+}
+.rec-stat-val.up { color: #15803d; }
+.rec-stat-val.down { color: var(--red-dark); }

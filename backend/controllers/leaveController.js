@@ -2,6 +2,7 @@ import Leave from "../models/Leave.js";
 import User from "../models/User.js";
 import { computeLeaveDeduction, accruedLeaveDays } from "../services/leaveDeduction.js";
 import { sendMail, staffEmails } from "../services/mail.js";
+import { newLeaveRequestEmail, leaveDecisionEmail } from "../services/emailTemplates.js";
 
 const fmt = (d) => new Date(d).toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" });
 
@@ -89,10 +90,10 @@ export const createLeave = async (req, res) => {
     sendMail({
       to,
       subject: `New leave request — ${leave.employee.name}`,
-      html: `<p><strong>${leave.employee.name}</strong> applied for <strong>${leave.type}</strong> leave.</p>
-             <p>${fmt(leave.fromDate)} → ${fmt(leave.toDate)} (${leave.days} day${leave.days === 1 ? "" : "s"})</p>
-             ${leave.reason ? `<p>Reason: ${leave.reason}</p>` : ""}
-             <p>Review it in the HR panel → Leave Applications.</p>`,
+      html: newLeaveRequestEmail({
+        name: leave.employee.name, leaveType: leave.type,
+        startDate: leave.fromDate, endDate: leave.toDate, numDays: leave.days, reason: leave.reason,
+      }),
     })
   );
 
@@ -114,13 +115,13 @@ export const updateLeaveStatus = async (req, res) => {
 
   // Notify the employee of the decision / review
   if (leave.employee?.email) {
-    const label = status === "approved" ? "approved ✅" : status === "rejected" ? "rejected ❌" : "updated";
     sendMail({
       to: leave.employee.email,
-      subject: `Your leave request was ${label.replace(/ .$/, "")}`,
-      html: `<p>Hi ${leave.employee.name},</p>
-             <p>Your <strong>${leave.type}</strong> leave (${fmt(leave.fromDate)} → ${fmt(leave.toDate)}) was <strong>${label}</strong>.</p>
-             ${leave.reviewNote ? `<p>Note from HR: ${leave.reviewNote}</p>` : ""}`,
+      subject: `Your leave request was ${status}`,
+      html: leaveDecisionEmail({
+        name: leave.employee.name, status,
+        startDate: leave.fromDate, endDate: leave.toDate, numDays: leave.days, hrNote: leave.reviewNote,
+      }),
     });
   }
 

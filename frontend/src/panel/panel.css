@@ -527,6 +527,8 @@ table.data tbody tr:hover {
   font-size: 0.88rem;
   font-family: inherit;
   outline: none;
+  background: #ffffff;
+  color: var(--black);
 }
 .form-field input:focus,
 .form-field select:focus,

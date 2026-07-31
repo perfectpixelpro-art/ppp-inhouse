@@ -3,6 +3,9 @@ import Attendance from "./models/Attendance.js";
 import User from "./models/User.js";
 import Holiday from "./models/Holiday.js";
 import Leave from "./models/Leave.js";
+import Task from "./models/Task.js";
+import Project from "./models/Project.js"; // ensure the model is registered for populate
+import { CLOSED_STATUSES } from "./models/Task.js";
 import { hardStopAll } from "./services/attendanceHardStop.js";
 import { lunchStopAll } from "./services/attendanceLunch.js";
 import { remindLongBreaks, remindLunchNotResumed } from "./services/attendanceBreakReminder.js";
@@ -10,6 +13,7 @@ import { postShiftCheck, postToChannel } from "./services/slack.js";
 import { syncMonth } from "./controllers/googleController.js";
 import { isAuthorized } from "./services/googleSheets.js";
 import { sendMail, staffEmails } from "./services/mail.js";
+import { celebrationEmail, taskSummaryEmail } from "./services/emailTemplates.js";
 
 const IST = { timezone: "Asia/Kolkata" };
 
@@ -23,14 +27,74 @@ export const sendBirthdayAnniversary = async () => {
   if (!to.length) return;
   for (const u of users) {
     if (u.birthdate && mmdd(u.birthdate) === key) {
-      await sendMail({ to, subject: `🎂 Birthday today — ${u.name}`, html: `<p>It's <strong>${u.name}</strong>'s birthday today. 🎉</p>` });
+      await sendMail({
+        to, subject: `🎂 Birthday today — ${u.name}`,
+        html: celebrationEmail({
+          name: u.name, label: "Birthday",
+          headline: `🎂 It's ${u.name}'s birthday!`,
+          message: "take a moment to wish them a great day",
+          detail: "Birthday today",
+        }),
+      });
     }
     if (u.joinDate && mmdd(u.joinDate) === key) {
       const years = today.getFullYear() - new Date(u.joinDate).getFullYear();
       if (years > 0)
-        await sendMail({ to, subject: `🎉 Work anniversary — ${u.name} (${years} yr)`, html: `<p><strong>${u.name}</strong> completes <strong>${years} year${years === 1 ? "" : "s"}</strong> today. 🎊</p>` });
+        await sendMail({
+          to, subject: `🎉 Work anniversary — ${u.name} (${years} yr)`,
+          html: celebrationEmail({
+            name: u.name, label: "Work Anniversary",
+            headline: `🎉 ${u.name}'s ${years}-year work anniversary`,
+            message: `celebrate ${years} year${years === 1 ? "" : "s"} at Perfect Pixel Pro`,
+            detail: `${years} year${years === 1 ? "" : "s"} today`,
+          }),
+        });
     }
   }
+};
+
+// 9 PM — email each employee a summary of their tasks: status, worked time,
+// review time and the latest review feedback.
+const STATUS_TXT = { todo: "To-do", in_progress: "In progress", in_review: "In review", approved: "Approved", done: "Done" };
+const msToHm = (ms) => {
+  const m = Math.round((ms || 0) / 60000);
+  if (!m) return "—";
+  const h = Math.floor(m / 60), mm = m % 60;
+  return h ? (mm ? `${h}h ${mm}m` : `${h}h`) : `${mm}m`;
+};
+const dmy = (d) => (d ? new Date(d).toLocaleDateString("en-IN", { day: "2-digit", month: "short", timeZone: "Asia/Kolkata" }) : "—");
+
+export const sendDailyTaskDigest = async () => {
+  const employees = await User.find({ active: true, role: { $in: ["employee", "project_manager"] } }).select("name email");
+  let sent = 0;
+  for (const u of employees) {
+    if (!u.email) continue;
+    const tasks = await Task.find({ $or: [{ assignedTo: u._id }, { coAssignees: u._id }] })
+      .populate("projectId", "name")
+      .sort({ status: 1, dueDate: 1 });
+    if (!tasks.length) continue;
+
+    const rows = tasks.map((t) => {
+      const worked = t.activeMs ? msToHm(t.activeMs) : t.startedAt && !CLOSED_STATUSES.includes(t.status) ? "In progress" : "—";
+      const lastChange = [...t.comments].reverse().find((c) => (c.text || "").startsWith("🔁"));
+      const feedback = lastChange ? lastChange.text.replace("🔁 Changes requested: ", "") : t.reviewedBy ? "Reviewed" : "—";
+      return {
+        status: t.status, statusLabel: STATUS_TXT[t.status] || t.status,
+        project: t.projectId?.name || "—", due: dmy(t.dueDate),
+        timeTaken: worked, reviewTime: msToHm(t.reviewMs), feedback,
+      };
+    });
+
+    const html = taskSummaryEmail({
+      name: u.name,
+      summaryDate: new Date().toLocaleDateString("en-IN", { day: "2-digit", month: "long", year: "numeric", timeZone: "Asia/Kolkata" }),
+      rows,
+    });
+    await sendMail({ to: u.email, subject: `📋 Your daily task summary`, html });
+    sent++;
+  }
+  console.log(`[scheduler] 9 PM task digest — emailed ${sent} employee(s)`);
+  return sent;
 };
 
 // Current time as "HH:MM" in IST — matches User.reminderTimesIST entries.
@@ -160,6 +224,13 @@ export const startScheduler = () => {
     IST
   );
 
+  // 9:00 PM — email each employee their daily task summary
+  cron.schedule(
+    "0 21 * * *",
+    () => sendDailyTaskDigest().catch((e) => console.error("[scheduler] task digest failed:", e.message)),
+    IST
+  );
+
   // 9:00 AM — birthday & work-anniversary emails to HR
   cron.schedule(
     "0 9 * * *",
@@ -173,5 +244,5 @@ export const startScheduler = () => {
     IST
   );
 
-  console.log("[scheduler] per-employee shift reminders/caps + 2 PM lunch + 15-min break nudge + 3:10 PM check-in/lunch pings + 10 PM Google sync + 9 AM birthday mail scheduled (Asia/Kolkata)");
+  console.log("[scheduler] shift reminders/caps + 2 PM lunch + 15-min break nudge + 3:10 PM pings + 9 PM task digest + 10 PM Google sync + 9 AM birthday mail scheduled (Asia/Kolkata)");
 };

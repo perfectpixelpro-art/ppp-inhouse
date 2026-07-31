@@ -9,12 +9,13 @@ import GanttView from "./views/GanttView";
 import CalendarView from "./views/CalendarView";
 import ProjectDashboard from "./ProjectDashboard";
 import AssetsGrid from "./AssetsGrid";
+import ProjectBoard from "./ProjectBoard";
 import TaskModal from "./TaskModal";
 import TaskDetail from "./TaskDetail";
 import { fmtDayYear } from "./pmUtils";
 
-const TABS = ["overview", "timeline", "dashboard", "calendar", "assets"];
-const TAB_LABEL = { overview: "Overview", timeline: "Timeline", dashboard: "Dashboard", calendar: "Calendar", assets: "Assets" };
+const TABS = ["overview", "timeline", "dashboard", "calendar", "assets", "board"];
+const TAB_LABEL = { overview: "Overview", timeline: "Timeline", dashboard: "Dashboard", calendar: "Calendar", assets: "Assets", board: "Board" };
 
 export default function ProjectDetail() {
   const { id } = useParams();
@@ -116,6 +117,7 @@ export default function ProjectDetail() {
       {tab === "dashboard" && <ProjectDashboard stats={stats} />}
       {tab === "calendar" && <CalendarView tasks={tasks} onEdit={(t) => setDetailId(t._id)} />}
       {tab === "assets" && <AssetsGrid assets={assets} />}
+      {tab === "board" && <ProjectBoard projectId={id} />}
 
       {modal && (
         <TaskModal

@@ -125,6 +125,21 @@ export const notifyApproved = async ({ channelId, approverName, taskTitle, assig
   await postToChannel(`:ballot_box_with_check: *${taskTitle}* approved & marked *done* by *${approverName}* at *${nowIST()}*${who}`, channelId);
 };
 
+// A person was added as a dependency (with a reason) — posted to the channel,
+// tagging that person.
+export const notifyDependencyPerson = async ({ channelId, byName, taskTitle, personSlackId, personName, reason }) => {
+  const who = personSlackId ? `<@${personSlackId}>` : `*${personName || "someone"}*`;
+  let text = `:link: *${taskTitle}* is blocked by ${who} — added by *${byName}* at *${nowIST()}*`;
+  if (reason) text += `\n>${reason.replace(/\n/g, "\n>")}`;
+  await postToChannel(text, channelId);
+};
+
+// A subtask was created for a person — posted to the channel, tagging them.
+export const notifySubtask = async ({ channelId, byName, parentTitle, subTitle, personSlackId, personName }) => {
+  const who = personSlackId ? `<@${personSlackId}>` : `*${personName || "someone"}*`;
+  await postToChannel(`:heavy_plus_sign: Subtask *${subTitle}* added for ${who} on *${parentTitle}* by *${byName}* at *${nowIST()}*`, channelId);
+};
+
 // A reviewer requested changes — posted to the project channel, tagging the
 // assignee, with what needs changing.
 export const notifyChangesRequested = async ({ channelId, reviewerName, taskTitle, assigneeSlackId, note }) => {

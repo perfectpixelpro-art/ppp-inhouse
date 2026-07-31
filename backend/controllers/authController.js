@@ -2,6 +2,7 @@ import crypto from "crypto";
 import User from "../models/User.js";
 import { generateToken } from "../utils/token.js";
 import { sendMail } from "../services/mail.js";
+import { passwordResetEmail } from "../services/emailTemplates.js";
 
 const RESET_TTL_MS = 60 * 60 * 1000; // 1 hour
 const hashToken = (t) => crypto.createHash("sha256").update(t).digest("hex");
@@ -61,10 +62,7 @@ export const forgotPassword = async (req, res) => {
   await sendMail({
     to: user.email,
     subject: "Reset your PPP password",
-    html: `<p>Hi ${user.name},</p>
-           <p>Click below to set a new password. The link expires in 1 hour and can be used once.</p>
-           <p><a href="${link}">Reset my password</a></p>
-           <p style="color:#666;font-size:12px">If you didn't request this, ignore this email — your password stays unchanged.</p>`,
+    html: passwordResetEmail({ name: user.name, resetLink: link }),
   });
 
   res.json({ sent: true, message: `Reset link sent to ${user.email}. Check your inbox.` });

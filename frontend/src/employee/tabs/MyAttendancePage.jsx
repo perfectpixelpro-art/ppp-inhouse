@@ -1,11 +1,11 @@
 import { useEffect, useRef, useState } from "react";
-import { myAttendance, myToday, checkIn, checkOut, saveDsr, markRain } from "../../api/employee";
+import { myAttendance, myToday, checkIn, checkOut, saveDsr, markRain, fetchHolidays } from "../../api/employee";
 import { fmtDate, fmtTime } from "../../panel/utils";
 import Modal from "../../panel/Modal";
 import AttendanceCalendar from "../../panel/AttendanceCalendar";
 import BalanceCard from "../../panel/BalanceCard";
 import LocationStamp from "../../panel/LocationStamp";
-import { overtimeMs } from "../../panel/payroll";
+import { overtimeMs, monthlySummary } from "../../panel/payroll";
 import "./attendance.css";
 
 const HOUR = 3600000;
@@ -65,6 +65,9 @@ export default function MyAttendancePage() {
   const [viewDsr, setViewDsr] = useState(null);
   const [histView, setHistView] = useState("table");
   const [confirmEnd, setConfirmEnd] = useState(false);
+  const [recordsOpen, setRecordsOpen] = useState(false);
+  const [recMonth, setRecMonth] = useState("");
+  const [holidays, setHolidays] = useState([]);
   const tick = useRef(null);
 
   const refreshHistory = () => myAttendance().then(setRecords);
@@ -76,11 +79,15 @@ export default function MyAttendancePage() {
       .finally(() => setLoading(false));
   };
   useEffect(load, []);
+  useEffect(() => { fetchHolidays().then(setHolidays).catch(() => {}); }, []);
 
   useEffect(() => {
     clearInterval(tick.current);
     if (today?.state === "working") {
       tick.current = setInterval(() => setNow(Date.now()), 1000);
+    } else if (today?.state === "on_break" || today?.state === "on_lunch") {
+      // tick slower on a break so the "resume your timer" reminder appears
+      tick.current = setInterval(() => setNow(Date.now()), 15000);
     }
     return () => clearInterval(tick.current);
   }, [today?.state]);
@@ -161,8 +168,113 @@ export default function MyAttendancePage() {
   const istHour = Number(new Date().toLocaleString("en-US", { timeZone: "Asia/Kolkata", hour: "2-digit", hour12: false }));
   const lunchLocked = state === "on_lunch" && istHour < 15;
 
+  // "You forgot to resume" reminder — shown in-portal while paused.
+  const openBreak = today?.breaks?.length ? today.breaks[today.breaks.length - 1] : null;
+  const breakMins = openBreak && !openBreak.end ? Math.floor((now - new Date(openBreak.start).getTime()) / 60000) : 0;
+  const resumeReminder =
+    state === "on_break" && breakMins >= 10
+      ? `⏰ You've been on a short break for ${breakMins} min — resume your timer to keep the clock running.`
+      : state === "on_lunch" && !lunchLocked
+      ? `🍽 Lunch is over — you forgot to resume. Tap “Resume (Check In)” to continue your day.`
+      : "";
+
+  // History is scoped to the current month; older months live behind "Records".
+  const monthOf = (d) => String(d).slice(0, 7); // "YYYY-MM"
+  const thisMonth = new Date().toISOString().slice(0, 7);
+  const monthRecords = records.filter((r) => monthOf(r.date) === thisMonth);
+  const allMonths = [...new Set(records.map((r) => monthOf(r.date)))].sort().reverse();
+  const activeMonth = recMonth || allMonths[0] || thisMonth;
+  const recRecords = records.filter((r) => monthOf(r.date) === activeMonth);
+  // National holidays that fall in the active month (YYYY-MM-DD set) for the base calc.
+  const ymdOf = (d) => {
+    const t = new Date(d).getTime();
+    return Number.isNaN(t) ? "" : new Date(t).toISOString().slice(0, 10);
+  };
+  const holidaySet = new Set(
+    holidays
+      .filter((h) => h.type === "national" && ymdOf(h.date).slice(0, 7) === activeMonth)
+      .map((h) => ymdOf(h.date))
+      .filter(Boolean)
+  );
+  const [yy, mm] = activeMonth.split("-").map(Number);
+  const summary = monthlySummary(yy, (mm || 1) - 1, recRecords, holidaySet);
+  const daysWorked = recRecords.filter((r) => r.state === "ended").length;
+
+  const renderRow = (r) => {
+    const ms = r.workedMs || 0;
+    const t = targetMs(r);
+    const ot = overtimeMs(r); // excludes an un-taken lunch hour
+    return (
+      <tr key={r._id}>
+        <td>{fmtDate(r.date)}</td>
+        <td style={{ color: "#15803d", fontWeight: 600 }}>{fmtTime(r.checkIn)}</td>
+        <td style={{ color: "var(--red-dark)", fontWeight: 600 }}>{fmtTime(r.checkOut)}</td>
+        <td>{r.state === "ended" ? <span className={`work-pill ${workedClass(ms, t)}`}>{fmtHm(ms)}</span> : "—"}</td>
+        <td>
+          <span className={`badge ${r.state === "ended" ? "badge-approved" : "badge-pending"}`}>{STATE_LABEL[r.state] || r.status}</span>
+          <span className={`day-tag sm ${r.dayType === "half" ? "half" : "full"}`}>{r.dayType === "half" ? "Half" : "Full"}</span>
+          {r.autoClosed && <span className="badge badge-red" style={{ marginLeft: 4 }}>⚠ {r.note}</span>}
+          {r.rain && <span className="badge att-rain" style={{ marginLeft: 4 }}>🌧 Rain</span>}
+        </td>
+        <td>{ot > 60000 ? <span className="delta up">+{fmtHm(ot)}</span> : "—"}</td>
+        <td>{ot < -60000 ? <span className="delta down">−{fmtHm(-ot)}</span> : "—"}</td>
+        <td><LocationStamp loc={r.checkInLocation} /></td>
+        <td className="dsr-cell">
+          {r.dsr ? <button className="dsr-link" onClick={() => setViewDsr(r)}>{r.dsr}</button> : <span style={{ color: "var(--gray-400)" }}>—</span>}
+        </td>
+      </tr>
+    );
+  };
+  const monthLabel = (m) => new Date(m + "-01").toLocaleDateString("en-IN", { month: "long", year: "numeric" });
+
   return (
     <div>
+      {recordsOpen ? (
+        <div>
+          <div className="page-head">
+            <div>
+              <h2>Attendance Records</h2>
+              <p>Your full history — pick a month</p>
+            </div>
+            <button className="btn btn-ghost" onClick={() => setRecordsOpen(false)}>← Back to In / Out</button>
+          </div>
+
+          <div className="rec-controls">
+            <label>Month</label>
+            <select value={activeMonth} onChange={(e) => setRecMonth(e.target.value)}>
+              {allMonths.map((m) => <option key={m} value={m}>{monthLabel(m)}</option>)}
+            </select>
+            <span className="rec-count">{recRecords.length} day{recRecords.length === 1 ? "" : "s"} recorded</span>
+          </div>
+
+          <BalanceCard records={recRecords} label={`${monthLabel(activeMonth)} balance`} />
+
+          <div className="rec-month-stats">
+            <div><span className="rec-stat-label">Working days (excl. offs &amp; holidays)</span><span className="rec-stat-val">{summary.workingDays}</span></div>
+            <div><span className="rec-stat-label">Days worked</span><span className="rec-stat-val">{daysWorked}</span></div>
+            <div><span className="rec-stat-label">Expected</span><span className="rec-stat-val">{fmtHm(summary.baseMs)}</span></div>
+            <div><span className="rec-stat-label">Worked (chargeable)</span><span className="rec-stat-val">{fmtHm(summary.workedMs)}</span></div>
+            <div>
+              <span className="rec-stat-label">Net vs base</span>
+              <span className={`rec-stat-val ${summary.diffMs >= 0 ? "up" : "down"}`}>{summary.diffMs >= 0 ? "+" : "−"}{fmtHm(Math.abs(summary.diffMs))}</span>
+            </div>
+            {holidaySet.size > 0 && <div><span className="rec-stat-label">Holidays this month</span><span className="rec-stat-val">{holidaySet.size}</span></div>}
+          </div>
+
+          <div className="table-wrap" style={{ marginTop: 16 }}>
+            <table className="data">
+              <thead>
+                <tr><th>Date</th><th>In</th><th>Out</th><th>Worked</th><th>Status</th><th>Overtime</th><th>Short</th><th>Location</th><th>Daily Task</th></tr>
+              </thead>
+              <tbody>
+                {recRecords.map(renderRow)}
+                {recRecords.length === 0 && <tr><td colSpan={9} className="empty">No records for this month.</td></tr>}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      ) : (
+      <>
       <div className="page-head">
         <div>
           <h2>In / Out</h2>
@@ -171,6 +283,7 @@ export default function MyAttendancePage() {
       </div>
 
       {error && <div className="error-banner">{error}</div>}
+      {resumeReminder && <div className="resume-reminder">{resumeReminder}</div>}
 
       {loading ? (
         <div className="loading">Loading…</div>
@@ -269,16 +382,19 @@ export default function MyAttendancePage() {
             {today?.rain && <span className="badge badge-neutral" style={{ marginLeft: 6 }}>Rain — HR notified</span>}
           </label>
 
-          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", margin: "1.5rem 0 0.75rem" }}>
-            <h3 style={{ margin: 0, fontSize: "1rem" }}>My history</h3>
-            <div className="view-toggle">
-              <button className={histView === "table" ? "active" : ""} onClick={() => setHistView("table")}>Table</button>
-              <button className={histView === "calendar" ? "active" : ""} onClick={() => setHistView("calendar")}>Calendar</button>
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", margin: "1.5rem 0 0.75rem", gap: 8, flexWrap: "wrap" }}>
+            <h3 style={{ margin: 0, fontSize: "1rem" }}>My history <span style={{ color: "var(--gray-400)", fontWeight: 400, fontSize: ".85rem" }}>· this month</span></h3>
+            <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+              <button className="btn btn-ghost btn-sm" onClick={() => { setRecMonth(allMonths[0] || thisMonth); setRecordsOpen(true); }}>🗂 Records</button>
+              <div className="view-toggle">
+                <button className={histView === "table" ? "active" : ""} onClick={() => setHistView("table")}>Table</button>
+                <button className={histView === "calendar" ? "active" : ""} onClick={() => setHistView("calendar")}>Calendar</button>
+              </div>
             </div>
           </div>
 
           {histView === "calendar" ? (
-            <AttendanceCalendar records={records} />
+            <AttendanceCalendar records={monthRecords} />
           ) : (
           <div className="table-wrap">
             <table className="data">
@@ -289,47 +405,15 @@ export default function MyAttendancePage() {
                 </tr>
               </thead>
               <tbody>
-                {records.map((r) => {
-                  const ms = r.workedMs || 0;
-                  const t = targetMs(r);
-                  const ot = overtimeMs(r); // excludes an un-taken lunch hour
-                  return (
-                    <tr key={r._id}>
-                      <td>{fmtDate(r.date)}</td>
-                      <td style={{ color: "#15803d", fontWeight: 600 }}>{fmtTime(r.checkIn)}</td>
-                      <td style={{ color: "var(--red-dark)", fontWeight: 600 }}>{fmtTime(r.checkOut)}</td>
-                      <td>
-                        {r.state === "ended"
-                          ? <span className={`work-pill ${workedClass(ms, t)}`}>{fmtHm(ms)}</span>
-                          : "—"}
-                      </td>
-                      <td>
-                        <span className={`badge ${r.state === "ended" ? "badge-approved" : "badge-pending"}`}>
-                          {STATE_LABEL[r.state] || r.status}
-                        </span>
-                        <span className={`day-tag sm ${r.dayType === "half" ? "half" : "full"}`}>
-                          {r.dayType === "half" ? "Half" : "Full"}
-                        </span>
-                        {r.autoClosed && <span className="badge badge-red" style={{ marginLeft: 4 }}>⚠ {r.note}</span>}
-                        {r.rain && <span className="badge att-rain" style={{ marginLeft: 4 }}>🌧 Rain</span>}
-                      </td>
-                      <td>{ot > 60000 ? <span className="delta up">+{fmtHm(ot)}</span> : "—"}</td>
-                      <td>{ot < -60000 ? <span className="delta down">−{fmtHm(-ot)}</span> : "—"}</td>
-                      <td><LocationStamp loc={r.checkInLocation} /></td>
-                      <td className="dsr-cell">
-                        {r.dsr
-                          ? <button className="dsr-link" onClick={() => setViewDsr(r)}>{r.dsr}</button>
-                          : <span style={{ color: "var(--gray-400)" }}>—</span>}
-                      </td>
-                    </tr>
-                  );
-                })}
-                {records.length === 0 && <tr><td colSpan={9} className="empty">No attendance yet.</td></tr>}
+                {monthRecords.map(renderRow)}
+                {monthRecords.length === 0 && <tr><td colSpan={9} className="empty">No attendance this month yet.</td></tr>}
               </tbody>
             </table>
           </div>
           )}
         </>
+      )}
+      </>
       )}
 
       {confirmEnd && (
@@ -383,6 +467,7 @@ export default function MyAttendancePage() {
           <p style={{ whiteSpace: "pre-wrap", margin: 0, lineHeight: 1.6 }}>{viewDsr.dsr}</p>
         </Modal>
       )}
+
     </div>
   );
 }

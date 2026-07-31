@@ -1,4 +1,8 @@
 :root {
+  /* Force light-mode form controls (inputs, selects, date pickers) so they don't
+     render dark on macOS/Windows dark mode. */
+  color-scheme: light;
+
   /* Palette: black, white, red */
   --black: #0d0d0d;
   --white: #ffffff;

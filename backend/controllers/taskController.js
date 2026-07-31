@@ -6,7 +6,7 @@ import { PM_VIEWER_ROLES } from "../models/User.js";
 import {
   notifyTaskAssignment, notifyReviewRequest,
   notifyTaskStart, notifyTaskComplete, notifyReviewToProject, notifyApproved, notifyChangesRequested,
-  SLACK_HR_ID, SLACK_ADMIN_ID,
+  notifyDependencyPerson, notifySubtask, SLACK_HR_ID, SLACK_ADMIN_ID,
 } from "../services/slack.js";
 
 const PERSON = "name email designation photo department";
@@ -55,28 +55,36 @@ const reviewTagIds = async (extraUsers = []) => {
 
 // Announce assignments to Slack (fire-and-forget). `tasks` are created docs with
 // assignedTo/projectId; we look up each assignee's Slack id for the @mention.
+const assigneeIdsOf = (task) => [task.assignedTo, ...(task.coAssignees || [])].map((a) => String(a?._id || a));
+
 const announceAssignments = async (tasks, assignerName) => {
-  const ids = [...new Set(tasks.map((t) => String(t.assignedTo?._id || t.assignedTo)))];
-  const users = await User.find({ _id: { $in: ids } }).select("name slackUserId");
+  const ids = new Set();
+  tasks.forEach((t) => assigneeIdsOf(t).forEach((id) => ids.add(id)));
+  const users = await User.find({ _id: { $in: [...ids] } }).select("name slackUserId");
   const umap = Object.fromEntries(users.map((u) => [String(u._id), u]));
-  const items = tasks.map((t) => ({
-    title: t.title,
-    projectName: t.projectId?.name || null,
-    dueDate: t.dueDate || null,
-    assignee: umap[String(t.assignedTo?._id || t.assignedTo)] || { name: t.assignedTo?.name },
-  }));
+  const items = [];
+  for (const t of tasks) {
+    for (const aid of assigneeIdsOf(t)) {
+      items.push({
+        title: t.title,
+        projectName: t.projectId?.name || null,
+        dueDate: t.dueDate || null,
+        assignee: umap[aid] || { name: "Someone" },
+      });
+    }
+  }
   await notifyTaskAssignment({ assignerName, items });
 };
 
-// Am I allowed to touch this task? Admin/HR always; otherwise the assignee, the
-// creator, or a member of its project.
+// Am I allowed to touch this task? Admin/HR always; otherwise a (co-)assignee,
+// the creator, or a member of its project.
 const canTouch = async (task, user) => {
   if (isStaff(user)) return true;
-  const userId = user._id;
-  if (String(task.assignedTo) === String(userId) || String(task.assignedBy) === String(userId)) return true;
+  const userId = String(user._id);
+  if (assigneeIdsOf(task).includes(userId) || String(task.assignedBy) === userId) return true;
   if (task.projectId) {
     const p = await Project.findById(task.projectId).select("members createdBy");
-    if (p && (String(p.createdBy) === String(userId) || p.members.some((m) => String(m) === String(userId)))) return true;
+    if (p && (String(p.createdBy) === userId || p.members.some((m) => String(m) === userId))) return true;
   }
   return false;
 };
@@ -89,8 +97,10 @@ export const assignableUsers = async (req, res) => {
 
 // GET /api/tasks/mine  — tasks assigned TO me (the "My Tasks" view).
 export const myTasks = async (req, res) => {
-  const tasks = await Task.find({ assignedTo: req.user._id })
+  const tasks = await Task.find({ $or: [{ assignedTo: req.user._id }, { coAssignees: req.user._id }] })
     .populate("assignedBy", PERSON)
+    .populate("assignedTo", PERSON)
+    .populate("coAssignees", PERSON)
     .populate("projectId", PROJECT)
     .sort({ status: 1, dueDate: 1, createdAt: -1 });
   res.json(tasks);
@@ -102,6 +112,7 @@ export const allTasks = async (req, res) => {
   if (!isStaff(req.user)) return res.status(403).json({ message: "Forbidden" });
   const tasks = await Task.find({})
     .populate("assignedTo", PERSON)
+    .populate("coAssignees", PERSON)
     .populate("assignedBy", PERSON)
     .populate("projectId", PROJECT)
     .sort({ status: 1, dueDate: 1, createdAt: -1 });
@@ -112,6 +123,7 @@ export const allTasks = async (req, res) => {
 export const assignedByMe = async (req, res) => {
   const tasks = await Task.find({ assignedBy: req.user._id })
     .populate("assignedTo", PERSON)
+    .populate("coAssignees", PERSON)
     .populate("projectId", PROJECT)
     .sort({ status: 1, dueDate: 1, createdAt: -1 });
   res.json(tasks);
@@ -128,6 +140,7 @@ export const projectTasks = async (req, res) => {
 
   const tasks = await Task.find({ projectId: project })
     .populate("assignedTo", PERSON)
+    .populate("coAssignees", PERSON)
     .sort({ parentTask: 1, dueDate: 1, createdAt: 1 });
   res.json(tasks);
 };
@@ -159,16 +172,17 @@ export const portfolio = async (req, res) => {
 //    (so employees can break their own work into subtasks). A subtask always
 //    inherits its parent's project.
 export const createTask = async (req, res) => {
-  const { title, assignedTo, dueDate, startDate, description, priority, projectId, parentTask } = req.body;
+  const { title, assignedTo, coAssignees, dueDate, startDate, description, priority, projectId, parentTask } = req.body;
   if (!title || !title.trim()) return res.status(400).json({ message: "Title is required" });
 
   let effectiveProjectId = projectId || null;
+  let parentDoc = null;
 
   if (parentTask) {
-    const parent = await Task.findById(parentTask);
-    if (!parent) return res.status(404).json({ message: "Parent task not found" });
-    if (!(await canTouch(parent, req.user))) return res.status(403).json({ message: "Not your task" });
-    effectiveProjectId = parent.projectId || null;
+    parentDoc = await Task.findById(parentTask);
+    if (!parentDoc) return res.status(404).json({ message: "Parent task not found" });
+    if (!(await canTouch(parentDoc, req.user))) return res.status(403).json({ message: "Not your task" });
+    effectiveProjectId = parentDoc.projectId || null;
   } else {
     if (!isStaff(req.user)) {
       return res.status(403).json({ message: "Only admin, HR or a project manager can create tasks" });
@@ -185,10 +199,19 @@ export const createTask = async (req, res) => {
   const owner = await User.findById(ownerId).select("_id active");
   if (!owner || !owner.active) return res.status(400).json({ message: "That person can't be assigned tasks" });
 
+  // Additional (co-)assignees — active users, deduped, excluding the primary owner.
+  let validCo = [];
+  const coIds = Array.isArray(coAssignees) ? [...new Set(coAssignees.map(String))].filter((id) => id !== String(ownerId)) : [];
+  if (coIds.length) {
+    const us = await User.find({ _id: { $in: coIds }, active: true }).select("_id");
+    validCo = us.map((u) => u._id);
+  }
+
   const task = await Task.create({
     title: title.trim(),
     description: description?.trim() || "",
     assignedTo: ownerId,
+    coAssignees: validCo,
     assignedBy: req.user._id,
     dueDate: dueDate || undefined,
     startDate: startDate || undefined,
@@ -196,11 +219,21 @@ export const createTask = async (req, res) => {
     projectId: effectiveProjectId,
     parentTask: parentTask || null,
   });
-  await task.populate([{ path: "assignedTo", select: PERSON }, { path: "projectId", select: PROJECT }]);
+  await task.populate([{ path: "assignedTo", select: PERSON }, { path: "coAssignees", select: PERSON }, { path: "projectId", select: PROJECT }]);
 
-  // Announce new top-level assignments to Slack (not subtasks).
   if (!parentTask) {
+    // Announce new top-level assignments to Slack.
     announceAssignments([task], req.user.name).catch((e) => console.error("[slack] task notify failed:", e.message));
+  } else {
+    // Announce a new subtask to the parent project's channel, tagging the assignee.
+    (async () => {
+      const channelId = await projectChannelOf(parentDoc);
+      const person = task.assignedTo || {};
+      await notifySubtask({
+        channelId, byName: req.user.name, parentTitle: parentDoc.title, subTitle: task.title,
+        personSlackId: await slackIdOf(person), personName: person.name,
+      });
+    })().catch((e) => console.error("[slack] subtask notify failed:", e.message));
   }
   res.status(201).json(task);
 };
@@ -284,14 +317,37 @@ export const updateTask = async (req, res) => {
   if (b.dueDate !== undefined) task.dueDate = b.dueDate || undefined;
   if (b.timeSpent !== undefined) task.timeSpent = Math.max(0, Number(b.timeSpent) || 0);
   if (b.assignedTo !== undefined && b.assignedTo) task.assignedTo = b.assignedTo;
+  // Add / change co-assignees (double assign). Track newly added for the notice.
+  let addedCo = [];
+  if (b.coAssignees !== undefined) {
+    const prevCo = (task.coAssignees || []).map(String);
+    const coIds = Array.isArray(b.coAssignees) ? [...new Set(b.coAssignees.map(String))].filter((id) => id !== String(task.assignedTo)) : [];
+    let valid = [];
+    if (coIds.length) {
+      const us = await User.find({ _id: { $in: coIds }, active: true }).select("_id");
+      valid = us.map((u) => String(u._id));
+    }
+    addedCo = valid.filter((id) => !prevCo.includes(id));
+    task.coAssignees = valid;
+  }
   // Dependencies are managed via the dedicated /dependencies endpoints, not here.
 
   await task.save();
   await task.populate([
     { path: "assignedBy", select: PERSON },
     { path: "assignedTo", select: PERSON },
+    { path: "coAssignees", select: PERSON },
     { path: "projectId", select: PROJECT },
   ]);
+
+  // Notify newly added co-assignees (double assign).
+  if (addedCo.length) {
+    (async () => {
+      const us = await User.find({ _id: { $in: addedCo } }).select("name slackUserId");
+      const items = us.map((u) => ({ title: task.title, projectName: task.projectId?.name || null, dueDate: task.dueDate || null, assignee: u }));
+      await notifyTaskAssignment({ assignerName: req.user.name, items });
+    })().catch((e) => console.error("[slack] co-assign notify failed:", e.message));
+  }
 
   // Post start / complete / approved events to the project's Slack channel.
   if (b.status && (approvedNow || b.status !== prevStatus)) {
@@ -359,6 +415,8 @@ export const addDependency = async (req, res) => {
   if (!task) return res.status(404).json({ message: "Task not found" });
   if (!(await canTouch(task, req.user))) return res.status(403).json({ message: "Not your task" });
 
+  let depPerson = null;
+  let depReason = "";
   if (kind === "task") {
     const depId = req.body.task;
     if (!depId) return res.status(400).json({ message: "Pick a task" });
@@ -369,26 +427,39 @@ export const addDependency = async (req, res) => {
     task.dependencies.push({ kind: "task", task: depId, reason: (reason || "").trim() });
   } else if (kind === "person") {
     if (!req.body.person) return res.status(400).json({ message: "Pick a person" });
-    const u = await User.findById(req.body.person).select("_id active name");
+    const u = await User.findById(req.body.person).select("_id active name slackUserId");
     if (!u || !u.active) return res.status(400).json({ message: "That person can't be added" });
     // A person dependency spawns a real task for that person (same project) so the
     // work they're blocking on shows up in their own task list.
-    const reasonText = (reason || "").trim();
+    depReason = (reason || "").trim();
+    depPerson = u;
     const spawned = await Task.create({
-      title: reasonText || `Support: ${task.title}`,
+      title: depReason || `Support: ${task.title}`,
       description: `Blocking "${task.title}" — requested by ${req.user.name}`,
       assignedTo: u._id,
       assignedBy: req.user._id,
       projectId: task.projectId || null,
       dueDate: task.dueDate || undefined,
     });
-    task.dependencies.push({ kind: "person", person: u._id, task: spawned._id, reason: reasonText });
+    task.dependencies.push({ kind: "person", person: u._id, task: spawned._id, reason: depReason });
   } else {
     return res.status(400).json({ message: "kind must be 'task' or 'person'" });
   }
 
   await task.save();
   await task.populate(DEP_POPULATE);
+
+  // Announce a person dependency (with reason) to Slack, tagging the person.
+  if (depPerson) {
+    (async () => {
+      const channelId = await projectChannelOf(task);
+      await notifyDependencyPerson({
+        channelId, byName: req.user.name, taskTitle: task.title,
+        personSlackId: depPerson.slackUserId, personName: depPerson.name, reason: depReason,
+      });
+    })().catch((e) => console.error("[slack] dependency notify failed:", e.message));
+  }
+
   res.status(201).json(task.dependencies);
 };
 
@@ -413,6 +484,7 @@ export const removeDependency = async (req, res) => {
 export const getTaskDetail = async (req, res) => {
   const task = await Task.findById(req.params.id)
     .populate("assignedTo", PERSON)
+    .populate("coAssignees", PERSON)
     .populate("assignedBy", PERSON)
     .populate("projectId", PROJECT)
     .populate("reviewedBy", "name")

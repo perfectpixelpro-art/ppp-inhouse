@@ -104,6 +104,11 @@ export default function TaskDetail({ id, onClose, onChanged }) {
     catch (e) { setError(e.response?.data?.message || e.message); }
   };
 
+  const addCoAssignee = (uid) => {
+    if (!uid) return;
+    patch({ coAssignees: [...(task.coAssignees || []).map((c) => c._id), uid] });
+  };
+
   const sendChanges = async () => {
     const note = changesNote.trim();
     if (!note) return;
@@ -154,7 +159,21 @@ export default function TaskDetail({ id, onClose, onChanged }) {
             )}
 
             <div className="td-meta">
-              <div className="td-row"><span className="td-label">Assignee</span><Person u={task.assignedTo} /></div>
+              <div className="td-row">
+                <span className="td-label">Assignee{task.coAssignees?.length ? "s" : ""}</span>
+                <div className="td-assignees">
+                  <Person u={task.assignedTo} />
+                  {(task.coAssignees || []).map((c) => <Person key={c._id} u={c} />)}
+                  {canTouch && (
+                    <select className="td-addassignee" value="" onChange={(e) => addCoAssignee(e.target.value)}>
+                      <option value="">+ add</option>
+                      {people
+                        .filter((p) => p._id !== task.assignedTo?._id && !(task.coAssignees || []).some((c) => c._id === p._id))
+                        .map((p) => <option key={p._id} value={p._id}>{p.name}</option>)}
+                    </select>
+                  )}
+                </div>
+              </div>
               <div className="td-row"><span className="td-label">Assigned by</span><Person u={task.assignedBy} /></div>
               <div className="td-row"><span className="td-label">Project</span><span className="td-value">{task.projectId?.name || "—"}</span></div>
               <div className="td-row">

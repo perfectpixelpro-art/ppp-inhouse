@@ -115,6 +115,51 @@ export const projectAssets = async (req, res) => {
   res.json(assets);
 };
 
+// GET /api/projects/:id/resources  — the shared board (members + staff).
+export const listResources = async (req, res) => {
+  const project = await Project.findById(req.params.id).populate("resources.addedBy", "name photo").select("resources members createdBy");
+  if (!project) return res.status(404).json({ message: "Project not found" });
+  if (!canView(project, req.user)) return res.status(403).json({ message: "Not a member of this project" });
+  const sorted = [...project.resources].sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+  res.json(sorted);
+};
+
+// POST /api/projects/:id/resources  { kind, url, name, fileKind, text }  — any member adds.
+export const addResource = async (req, res) => {
+  const project = await Project.findById(req.params.id).select("resources members createdBy");
+  if (!project) return res.status(404).json({ message: "Project not found" });
+  if (!canView(project, req.user)) return res.status(403).json({ message: "Not a member of this project" });
+
+  const { kind, url, name, fileKind, text } = req.body;
+  if (!["file", "link", "text"].includes(kind)) return res.status(400).json({ message: "Invalid kind" });
+  if (kind === "text" && !text?.trim()) return res.status(400).json({ message: "Text can't be empty" });
+  if ((kind === "file" || kind === "link") && !url) return res.status(400).json({ message: "A URL is required" });
+
+  project.resources.push({
+    kind, url: url || "", name: name || "", fileKind: fileKind || "file",
+    text: (text || "").trim(), addedBy: req.user._id, createdAt: new Date(),
+  });
+  await project.save();
+  await project.populate("resources.addedBy", "name photo");
+  res.status(201).json([...project.resources].sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt)));
+};
+
+// DELETE /api/projects/:id/resources/:resId  — the person who added it, or staff.
+export const removeResource = async (req, res) => {
+  const project = await Project.findById(req.params.id).select("resources members createdBy");
+  if (!project) return res.status(404).json({ message: "Project not found" });
+  if (!canView(project, req.user)) return res.status(403).json({ message: "Not a member of this project" });
+
+  const r = project.resources.id(req.params.resId);
+  if (!r) return res.status(404).json({ message: "Not found" });
+  if (!isStaff(req.user) && String(r.addedBy) !== String(req.user._id)) {
+    return res.status(403).json({ message: "You can only remove what you added" });
+  }
+  project.resources.pull({ _id: req.params.resId });
+  await project.save();
+  res.json({ message: "Removed", id: req.params.resId });
+};
+
 // PUT /api/projects/:id  — a member may edit name/description/members.
 export const updateProject = async (req, res) => {
   const project = await Project.findById(req.params.id);

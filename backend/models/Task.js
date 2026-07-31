@@ -33,8 +33,10 @@ const taskSchema = new mongoose.Schema(
     // A task may belong to a project (Project Management module) or stand alone
     // (the original quick-assign flow). Null projectId = standalone task.
     projectId: { type: mongoose.Schema.Types.ObjectId, ref: "Project", default: null },
-    // Anyone can assign to anyone: assignedBy is the creator, assignedTo the owner.
+    // Anyone can assign to anyone: assignedBy is the creator, assignedTo the primary
+    // owner, coAssignees additional people the task is also assigned to.
     assignedTo: { type: mongoose.Schema.Types.ObjectId, ref: "User", required: true },
+    coAssignees: [{ type: mongoose.Schema.Types.ObjectId, ref: "User" }],
     assignedBy: { type: mongoose.Schema.Types.ObjectId, ref: "User", required: true },
     status: { type: String, enum: TASK_STATUS, default: "todo" },
     priority: { type: String, enum: TASK_PRIORITY, default: "medium" },

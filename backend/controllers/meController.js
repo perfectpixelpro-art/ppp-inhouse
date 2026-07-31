@@ -5,6 +5,7 @@ import { applyHardStop } from "../services/attendanceHardStop.js";
 import { applyLunchStop, lunchEndInstant } from "../services/attendanceLunch.js";
 import { computeLeaveDeduction } from "../services/leaveDeduction.js";
 import { sendMail, staffEmails } from "../services/mail.js";
+import { newLeaveRequestEmail, documentsSubmittedEmail, rainDayEmail } from "../services/emailTemplates.js";
 import { isMacUserAgent, distanceFromOffice } from "../services/geo.js";
 import { postToChannel } from "../services/slack.js";
 
@@ -252,8 +253,7 @@ export const markRain = async (req, res) => {
       sendMail({
         to,
         subject: `🌧 Rain day marked — ${req.user.name}`,
-        html: `<p><strong>${req.user.name}</strong> marked <strong>${date}</strong> as a rain day.</p>
-               <p>No automatic attendance deduction is applied for this day — please review and calculate manually.</p>`,
+        html: rainDayEmail({ name: req.user.name, rainDate: fmt(date) }),
       })
     );
   }
@@ -293,10 +293,10 @@ export const applyLeave = async (req, res) => {
     sendMail({
       to,
       subject: `New leave request — ${req.user.name}`,
-      html: `<p><strong>${req.user.name}</strong> applied for <strong>${leave.type}</strong> leave.</p>
-             <p>${fmt(leave.fromDate)} → ${fmt(leave.toDate)} (${leave.days} day${leave.days === 1 ? "" : "s"})</p>
-             ${leave.reason ? `<p>Reason: ${leave.reason}</p>` : ""}
-             <p>Review it in the HR panel → Leave Applications.</p>`,
+      html: newLeaveRequestEmail({
+        name: req.user.name, leaveType: leave.type,
+        startDate: leave.fromDate, endDate: leave.toDate, numDays: leave.days, reason: leave.reason,
+      }),
     })
   );
 
@@ -322,7 +322,7 @@ export const attachLeaveDoc = async (req, res) => {
     sendMail({
       to,
       subject: `📎 Documents submitted — ${req.user.name}`,
-      html: `<p><strong>${req.user.name}</strong> attached a document to their leave request (${fmt(leave.fromDate)} → ${fmt(leave.toDate)}).</p>`,
+      html: documentsSubmittedEmail({ name: req.user.name, leaveType: leave.type, fileCount: 1 }),
     })
   );
 

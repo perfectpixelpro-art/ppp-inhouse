@@ -7,7 +7,7 @@ import { lunchEndInstant } from "./attendanceLunch.js";
 //   - on_break  → a SHORT break that has run past 15 min (checked every 5 min)
 //   - on_lunch  → lunch (a fixed 2–3 PM window) not resumed by the 3:10 PM check
 // A lunch break must never trip the 15-min rule, or every lunch would fire at 2:15.
-export const BREAK_GRACE_MS = 15 * 60000;
+export const BREAK_GRACE_MS = 10 * 60000;
 
 // Break notices share the short-break channel; postToChannel falls back to the
 // main HR/admin channel when SLACK_BREAK_CHANNEL_ID isn't configured.
@@ -85,9 +85,9 @@ if (import.meta.url === `file://${process.argv[1]}`) {
   const mk = (o = {}) => ({ date: "2026-07-15", breaks: [], ...o });
   const brk = (o = {}) => ({ type: "break", start: new Date(at("06:00:00")), ...o });
 
-  // --- short break, 15-min grace (break started 11:30 IST == 06:00 UTC) ---
-  ok(!breakReminderDue(mk({ state: "on_break", breaks: [brk()] }), at("06:10:00")), "10 min in → no nudge");
-  ok(breakReminderDue(mk({ state: "on_break", breaks: [brk()] }), at("06:15:00")), "exactly 15 min → nudge");
+  // --- short break, 10-min grace (break started 11:30 IST == 06:00 UTC) ---
+  ok(!breakReminderDue(mk({ state: "on_break", breaks: [brk()] }), at("06:08:00")), "8 min in → no nudge");
+  ok(breakReminderDue(mk({ state: "on_break", breaks: [brk()] }), at("06:10:00")), "exactly 10 min → nudge");
   ok(breakReminderDue(mk({ state: "on_break", breaks: [brk()] }), at("06:40:00")), "40 min in → nudge");
   ok(!breakReminderDue(mk({ state: "on_break", breaks: [brk({ remindedAt: new Date() })] }), at("06:40:00")), "already nudged → no repeat");
   ok(!breakReminderDue(mk({ state: "working", breaks: [brk({ end: new Date(at("06:05:00")) })] }), at("06:40:00")), "resumed → no nudge");

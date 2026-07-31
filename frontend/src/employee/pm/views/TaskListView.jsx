@@ -35,7 +35,9 @@ export default function TaskListView({ tasks, onEdit, onChanged, showProject = t
                 <button className="link-title" onClick={() => onEdit?.(t)}>{t.title}</button>
               </td>
               {showProject && <td>{t.projectId?.name || "—"}</td>}
-              {showAssignee && <td>{t.assignedTo?.name || "—"}</td>}
+              {showAssignee && (
+                <td>{t.assignedTo?.name || "—"}{t.coAssignees?.length ? ` +${t.coAssignees.length}` : ""}</td>
+              )}
               <td>
                 <span className="prio-dot" style={{ background: PRIORITY_COLOR[t.priority] }} />
                 <span style={{ textTransform: "capitalize" }}>{t.priority}</span>

@@ -19,10 +19,12 @@ export default function TaskModal({ defaults = {}, projects = [], onClose, onSav
   const [form, setForm] = useState({
     title: "", description: "",
     assignedTo: defaults.assignedTo || "",
+    coAssignees: [],
     projectId: defaults.projectId || "",
     priority: "medium", startDate: "", dueDate: "",
   });
   const set = (k) => (e) => setForm((f) => ({ ...f, [k]: e.target.value }));
+  const toggleCo = (id) => setForm((f) => ({ ...f, coAssignees: f.coAssignees.includes(id) ? f.coAssignees.filter((x) => x !== id) : [...f.coAssignees, id] }));
 
   // multiple-task form: a row per task, each with its own person + project
   const [rows, setRows] = useState(() => [newRow(), newRow(), newRow()]);
@@ -38,7 +40,8 @@ export default function TaskModal({ defaults = {}, projects = [], onClose, onSav
     try {
       const saved = await createTask({
         title: form.title, description: form.description,
-        assignedTo: form.assignedTo || undefined, projectId: form.projectId || null,
+        assignedTo: form.assignedTo || undefined, coAssignees: form.coAssignees,
+        projectId: form.projectId || null,
         priority: form.priority, startDate: form.startDate || null, dueDate: form.dueDate || null,
       });
       onSaved?.(saved);
@@ -103,6 +106,17 @@ export default function TaskModal({ defaults = {}, projects = [], onClose, onSav
               {people.map((p) => <option key={p._id} value={p._id}>{p.name}</option>)}
             </select>
           </div>
+          <div className="form-field full">
+            <label>Also assign to (optional) — double assign</label>
+            <div className="member-picker">
+              {people.filter((p) => p._id !== form.assignedTo).map((p) => (
+                <label key={p._id} className={`member-chip ${form.coAssignees.includes(p._id) ? "on" : ""}`}>
+                  <input type="checkbox" checked={form.coAssignees.includes(p._id)} onChange={() => toggleCo(p._id)} hidden />
+                  {p.name}
+                </label>
+              ))}
+            </div>
+          </div>
           <div className="form-field">
             <label>Project</label>
             <select value={form.projectId} onChange={set("projectId")}>
@@ -116,7 +130,6 @@ export default function TaskModal({ defaults = {}, projects = [], onClose, onSav
               {PRIORITIES.map((p) => <option key={p} value={p} style={{ textTransform: "capitalize" }}>{p}</option>)}
             </select>
           </div>
-          <div className="form-field" />
           <div className="form-field">
             <label>Start date &amp; time</label>
             <input type="datetime-local" value={form.startDate} onChange={set("startDate")} />
