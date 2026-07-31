@@ -1,18 +1,8 @@
 import { Router } from "express";
-import path from "path";
-import fs from "fs";
 import { protect } from "../middleware/auth.js";
-import { uploadImage, uploadAttachment, fileKind, UPLOAD_DIR } from "../middleware/upload.js";
-import { cloudinaryConfigured, uploadBuffer, uploadBufferAuto } from "../services/cloudinary.js";
+import { uploadImage, uploadAttachment, fileKind } from "../middleware/upload.js";
 
 const router = Router();
-
-const saveLocal = (file) => {
-  const ext = path.extname(file.originalname).toLowerCase();
-  const name = `${Date.now()}-${Math.round(Math.random() * 1e9)}${ext}`;
-  fs.writeFileSync(path.join(UPLOAD_DIR, name), file.buffer);
-  return `/uploads/${name}`;
-};
 
 // The server's public base URL, so uploaded-file links are absolute (Slack image
 // blocks and emails only render absolute https URLs). Set PUBLIC_URL in .env to
@@ -22,17 +12,12 @@ const absoluteUrl = (p) => (p.startsWith("http") ? p : `${publicBase()}${p}`);
 
 // POST /api/uploads  (any authenticated user) — returns { url }
 // Production: Cloudinary (https CDN URL). Dev fallback: local disk (/uploads/...).
+// Images stream to local disk (see middleware/upload.js) — multer has already
+// written the file, so req.file has { filename }. Served from /uploads.
 router.post("/", protect, uploadImage.single("file"), async (req, res) => {
   if (!req.file) return res.status(400).json({ message: "No file uploaded" });
   try {
-    if (cloudinaryConfigured()) {
-      const url = await uploadBuffer(req.file.buffer);
-      return res.status(201).json({ url });
-    }
-    const ext = path.extname(req.file.originalname).toLowerCase();
-    const name = `${Date.now()}-${Math.round(Math.random() * 1e9)}${ext}`;
-    fs.writeFileSync(path.join(UPLOAD_DIR, name), req.file.buffer);
-    res.status(201).json({ url: `/uploads/${name}` });
+    res.status(201).json({ url: absoluteUrl(`/uploads/${req.file.filename}`) });
   } catch (e) {
     res.status(500).json({ message: "Upload failed: " + e.message });
   }
