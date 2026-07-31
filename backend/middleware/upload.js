@@ -19,7 +19,7 @@ const imageFilter = (req, file, cb) => {
 export const uploadImage = multer({
   storage,
   fileFilter: imageFilter,
-  limits: { fileSize: 5 * 1024 * 1024 }, // 5 MB
+  limits: { fileSize: 25 * 1024 * 1024 }, // 25 MB — profile / gallery images (Cloudinary)
 });
 
 // Broader upload for review submissions: images, video, PDF, Office docs, text.
@@ -30,10 +30,22 @@ const attachmentFilter = (req, file, cb) => {
   cb(ok ? null : new Error("Unsupported file type"), ok);
 };
 
+// Large attachments (videos up to 500 MB) STREAM TO DISK, never buffered in RAM,
+// so a big upload can't exhaust the server's memory. Stored under UPLOAD_DIR and
+// served from /uploads. Cloudinary is intentionally bypassed for these (its free
+// tier caps videos at 100 MB anyway).
+const diskStorage = multer.diskStorage({
+  destination: (req, file, cb) => cb(null, UPLOAD_DIR),
+  filename: (req, file, cb) => {
+    const ext = path.extname(file.originalname).toLowerCase();
+    cb(null, `${Date.now()}-${Math.round(Math.random() * 1e9)}${ext}`);
+  },
+});
+
 export const uploadAttachment = multer({
-  storage,
+  storage: diskStorage,
   fileFilter: attachmentFilter,
-  limits: { fileSize: 50 * 1024 * 1024 }, // 50 MB (videos)
+  limits: { fileSize: 500 * 1024 * 1024 }, // 500 MB (videos) — streamed to disk
 });
 
 // Rough bucket for the frontend to render (thumbnail / player / link).
