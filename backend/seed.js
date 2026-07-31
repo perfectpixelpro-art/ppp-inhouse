@@ -12,7 +12,30 @@ import Gallery from "./models/Gallery.js";
 dotenv.config();
 
 const run = async () => {
+  // SAFETY GUARD — this script DELETES EVERY collection below and recreates only
+  // the admin + HR accounts. It must only ever touch a fresh/empty database.
+  // It refuses to run in production, and otherwise requires an explicit flag so
+  // it can never wipe live data by accident.
+  if (process.env.NODE_ENV === "production") {
+    console.error("Refusing to seed: NODE_ENV=production. This script DELETES ALL DATA.");
+    process.exit(1);
+  }
+  if (!process.argv.includes("--seed-fresh")) {
+    console.error("Refusing to seed: this DELETES ALL DATA (users, attendance, leaves, etc.).");
+    console.error("Only run on a fresh, empty database. If you are sure, re-run with:");
+    console.error("  node seed.js --seed-fresh");
+    process.exit(1);
+  }
+
   await connectDB();
+
+  // Extra guard: never wipe a database that already has real users.
+  const existingUsers = await User.countDocuments();
+  if (existingUsers > 2) {
+    console.error(`Refusing to seed: database already has ${existingUsers} users. This looks like live data.`);
+    await mongoose.connection.close();
+    process.exit(1);
+  }
 
   // Clean slate — no dummy data. Only the admin + HR accounts are created.
   await Promise.all([
