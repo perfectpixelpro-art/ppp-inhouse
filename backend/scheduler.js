@@ -163,9 +163,9 @@ export const notCheckedInPing = async (now = new Date()) => {
 
 // Registers all recurring background jobs.
 export const startScheduler = () => {
-  // 3:10 PM — remind anyone who forgot to check in, and anyone whose timer is
-  // still paused for lunch now that the 2–3 PM window has closed.
-  cron.schedule("10 15 * * *", () => notCheckedInPing().catch((e) => console.error("[scheduler] check-in ping failed:", e.message)), IST);
+  // 3:10 PM — remind anyone whose timer is still paused for lunch now that the
+  // 2–3 PM window has closed. (The "you haven't checked in yet" ping was removed
+  // on request — it caused confusion when people checked in after 3:10 PM.)
   cron.schedule(
     "10 15 * * *",
     () =>
