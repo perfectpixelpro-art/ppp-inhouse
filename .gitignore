@@ -1,0 +1,9 @@
+# macOS Finder metadata
+.DS_Store
+
+# JetBrains IDE (WebStorm / IntelliJ) settings — personal to each machine
+.idea/
+
+# Editor / OS clutter
+*.swp
+Thumbs.db
