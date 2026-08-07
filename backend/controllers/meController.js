@@ -3,6 +3,7 @@ import Leave from "../models/Leave.js";
 import User from "../models/User.js";
 import { applyHardStop } from "../services/attendanceHardStop.js";
 import { applyLunchStop, lunchEndInstant } from "../services/attendanceLunch.js";
+import { findMissedDays } from "../services/attendanceMissed.js";
 import { computeLeaveDeduction } from "../services/leaveDeduction.js";
 import { sendMail, staffEmails } from "../services/mail.js";
 import { newLeaveRequestEmail, documentsSubmittedEmail, rainDayEmail } from "../services/emailTemplates.js";
@@ -101,6 +102,44 @@ export const myAttendance = async (req, res) => {
     else await finalizeIfStale(r);
   }
   res.json(records);
+};
+
+// GET /api/me/attendance/missed  — recent working days the employee never accounted
+// for (no check-in, no leave). The client shows a popup to classify each.
+export const missedDays = async (req, res) => {
+  const dates = await findMissedDays(req.user._id);
+  res.json({ dates });
+};
+
+// POST /api/me/attendance/classify  { date, kind }  kind = leave | wfh | forgot
+// Employee self-classifies a missed day from the popup. Marks the day only —
+// pay/leave-balance decisions stay with HR.
+export const classifyDay = async (req, res) => {
+  const { date, kind } = req.body;
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(date || "")) return res.status(400).json({ message: "Invalid date" });
+  if (!["leave", "wfh", "forgot"].includes(kind)) return res.status(400).json({ message: "Invalid kind" });
+  if (date >= todayYMD()) return res.status(400).json({ message: "Can only classify past days" });
+
+  let rec = await Attendance.findOne({ employee: req.user._id, date });
+  if (rec && rec.checkIn) return res.status(400).json({ message: "This day already has attendance" });
+  if (!rec) rec = new Attendance({ employee: req.user._id, date });
+
+  rec.selfReportedAt = new Date();
+  rec.needsReview = false;
+  if (kind === "leave") {
+    rec.status = "leave";
+    rec.note = "Marked as leave by employee";
+  } else if (kind === "wfh") {
+    rec.status = "wfh";
+    rec.note = "Worked from home";
+  } else {
+    // forgot to punch in — real work happened; HR fills the times.
+    rec.status = "present";
+    rec.needsReview = true;
+    rec.note = "Forgot to punch in — pending HR correction";
+  }
+  await rec.save();
+  res.status(201).json(rec);
 };
 
 // GET /api/me/attendance/today  — the live record for today (8:30 PM cap applied)

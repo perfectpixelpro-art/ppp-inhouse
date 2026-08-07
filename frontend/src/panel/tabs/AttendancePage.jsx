@@ -159,7 +159,17 @@ export default function AttendancePage() {
                     <td>{r.state === "ended" && ot > 60000 ? <span style={{ color: "#15803d", fontWeight: 700 }}>+{fmtHm(ot)}</span> : "—"}</td>
                     <td>{r.state === "ended" && ot < -60000 ? <span style={{ color: "#b91c1c", fontWeight: 700 }}>−{fmtHm(-ot)}</span> : "—"}</td>
                     <td>
-                      <span className={`badge ${r.state === "ended" ? "badge-approved" : "badge-pending"}`}>{r.state}</span>
+                      {r.status === "leave" ? (
+                        <span className="badge" style={{ background: "#e0e7ff", color: "#3730a3" }}>🌴 Leave</span>
+                      ) : r.status === "wfh" ? (
+                        <span className="badge" style={{ background: "#dcfce7", color: "#166534" }}>🏠 WFH</span>
+                      ) : (
+                        <span className={`badge ${r.state === "ended" ? "badge-approved" : "badge-pending"}`}>{r.state}</span>
+                      )}
+                      {r.needsReview && <span className="badge badge-red" style={{ marginLeft: 4 }} title="Employee forgot to punch in — set the times">⏳ Forgot — set times</span>}
+                      {r.selfReportedAt && !r.needsReview && (r.status === "leave" || r.status === "wfh") && (
+                        <span className="badge" style={{ marginLeft: 4, background: "var(--gray-100,#f1f1f1)", color: "var(--gray-600)" }}>self-reported</span>
+                      )}
                       {r.rain && <span className="badge att-rain" style={{ marginLeft: 4 }}>🌧 Rain</span>}
                     </td>
                     <td><LocationStamp loc={r.checkInLocation} showDevice /></td>

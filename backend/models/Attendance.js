@@ -1,6 +1,6 @@
 import mongoose from "mongoose";
 
-export const ATTENDANCE_STATUS = ["present", "absent", "half-day", "leave"];
+export const ATTENDANCE_STATUS = ["present", "absent", "half-day", "leave", "wfh"];
 // Live shift state machine
 export const ATTENDANCE_STATE = ["not_started", "working", "on_lunch", "on_break", "ended"];
 
@@ -45,6 +45,10 @@ const attendanceSchema = new mongoose.Schema(
     rain: { type: Boolean, default: false }, // employee-flagged rain day — excluded from auto-deduction, HR reviews manually
     editedBy: { type: mongoose.Schema.Types.ObjectId, ref: "User" }, // HR/admin who corrected the times
     editedAt: { type: Date },
+    // Employee self-classified a missed day (leave / wfh / forgot) via the popup.
+    selfReportedAt: { type: Date },
+    // "forgot to punch in" — flags the day for HR to fill in the real times.
+    needsReview: { type: Boolean, default: false },
     // Set only when checking in from a touch device (phone/tablet using desktop
     // mode). Office Macs report no touch and check in without a location prompt.
     checkInLocation: {

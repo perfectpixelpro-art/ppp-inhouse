@@ -2,6 +2,8 @@ import { Router } from "express";
 import {
   myAttendance,
   myToday,
+  missedDays,
+  classifyDay,
   checkIn,
   checkOut,
   saveDsr,
@@ -22,6 +24,8 @@ router.patch("/profile", updateMyProfile);
 
 router.get("/attendance", myAttendance);
 router.get("/attendance/today", myToday);
+router.get("/attendance/missed", missedDays);
+router.post("/attendance/classify", classifyDay);
 router.post("/attendance/checkin", checkIn);
 router.post("/attendance/checkout", checkOut);
 router.post("/attendance/dsr", saveDsr);

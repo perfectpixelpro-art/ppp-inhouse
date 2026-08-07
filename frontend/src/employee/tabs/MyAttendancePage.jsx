@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { myAttendance, myToday, checkIn, checkOut, saveDsr, markRain, fetchHolidays } from "../../api/employee";
+import { myAttendance, myToday, checkIn, checkOut, saveDsr, markRain, fetchHolidays, fetchMissedDays, classifyMissedDay } from "../../api/employee";
 import { fmtDate, fmtTime } from "../../panel/utils";
 import Modal from "../../panel/Modal";
 import AttendanceCalendar from "../../panel/AttendanceCalendar";
@@ -68,6 +68,8 @@ export default function MyAttendancePage() {
   const [recordsOpen, setRecordsOpen] = useState(false);
   const [recMonth, setRecMonth] = useState("");
   const [holidays, setHolidays] = useState([]);
+  const [missed, setMissed] = useState([]); // past working days with no check-in
+  const [classifying, setClassifying] = useState("");
   const tick = useRef(null);
 
   const refreshHistory = () => myAttendance().then(setRecords);
@@ -80,6 +82,22 @@ export default function MyAttendancePage() {
   };
   useEffect(load, []);
   useEffect(() => { fetchHolidays().then(setHolidays).catch(() => {}); }, []);
+  useEffect(() => { fetchMissedDays().then(setMissed).catch(() => {}); }, []);
+
+  // Classify one missed day (leave / wfh / forgot) from the popup.
+  const classify = async (date, kind) => {
+    setClassifying(date);
+    try {
+      await classifyMissedDay(date, kind);
+      setMissed((m) => m.filter((d) => d !== date));
+      refreshHistory();
+    } catch (e) {
+      setError(e.response?.data?.message || e.message);
+    } finally {
+      setClassifying("");
+    }
+  };
+  const prettyDay = (d) => new Date(d + "T00:00").toLocaleDateString("en-IN", { weekday: "long", day: "numeric", month: "short" });
 
   useEffect(() => {
     clearInterval(tick.current);
@@ -211,8 +229,17 @@ export default function MyAttendancePage() {
         <td style={{ color: "var(--red-dark)", fontWeight: 600 }}>{fmtTime(r.checkOut)}</td>
         <td>{r.state === "ended" ? <span className={`work-pill ${workedClass(ms, t)}`}>{fmtHm(ms)}</span> : "—"}</td>
         <td>
-          <span className={`badge ${r.state === "ended" ? "badge-approved" : "badge-pending"}`}>{STATE_LABEL[r.state] || r.status}</span>
-          <span className={`day-tag sm ${r.dayType === "half" ? "half" : "full"}`}>{r.dayType === "half" ? "Half" : "Full"}</span>
+          {r.status === "leave" ? (
+            <span className="badge" style={{ background: "#e0e7ff", color: "#3730a3" }}>🌴 On Leave</span>
+          ) : r.status === "wfh" ? (
+            <span className="badge" style={{ background: "#dcfce7", color: "#166534" }}>🏠 Work From Home</span>
+          ) : (
+            <span className={`badge ${r.state === "ended" ? "badge-approved" : "badge-pending"}`}>{STATE_LABEL[r.state] || r.status}</span>
+          )}
+          {r.status !== "leave" && r.status !== "wfh" && (
+            <span className={`day-tag sm ${r.dayType === "half" ? "half" : "full"}`}>{r.dayType === "half" ? "Half" : "Full"}</span>
+          )}
+          {r.needsReview && <span className="badge badge-red" style={{ marginLeft: 4 }}>⏳ Forgot — HR to fix</span>}
           {r.autoClosed && <span className="badge badge-red" style={{ marginLeft: 4 }}>⚠ {r.note}</span>}
           {r.rain && <span className="badge att-rain" style={{ marginLeft: 4 }}>🌧 Rain</span>}
         </td>
@@ -229,6 +256,26 @@ export default function MyAttendancePage() {
 
   return (
     <div>
+      {missed.length > 0 && (
+        <Modal title="A few days need your attention" onClose={() => setMissed([])}>
+          <p style={{ marginTop: 0, color: "var(--gray-600)" }}>
+            You didn't check in on {missed.length === 1 ? "this day" : "these days"}. Please tell us what happened so your record is correct.
+          </p>
+          <div className="missed-list">
+            {missed.map((d) => (
+              <div key={d} className="missed-row">
+                <div className="missed-date">{prettyDay(d)}</div>
+                <div className="missed-actions">
+                  <button className="btn btn-sm" disabled={classifying === d} onClick={() => classify(d, "leave")}>🌴 On Leave</button>
+                  <button className="btn btn-sm" disabled={classifying === d} onClick={() => classify(d, "wfh")}>🏠 Work From Home</button>
+                  <button className="btn btn-sm" disabled={classifying === d} onClick={() => classify(d, "forgot")}>⏳ I forgot to punch in</button>
+                </div>
+              </div>
+            ))}
+          </div>
+          <p className="missed-hint">"Forgot to punch in" will ask HR to fill in your actual times.</p>
+        </Modal>
+      )}
       {recordsOpen ? (
         <div>
           <div className="page-head">

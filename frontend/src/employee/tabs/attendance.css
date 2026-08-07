@@ -281,3 +281,24 @@
 }
 .rec-stat-val.up { color: #15803d; }
 .rec-stat-val.down { color: var(--red-dark); }
+
+/* Missed-day popup (classify leave / wfh / forgot) */
+.missed-list { display: flex; flex-direction: column; gap: 10px; margin: 12px 0; }
+.missed-row {
+  border: 1px solid var(--gray-200);
+  border-radius: 10px;
+  padding: 12px 14px;
+  background: var(--gray-50);
+}
+.missed-date { font-weight: 700; margin-bottom: 8px; }
+.missed-actions { display: flex; flex-wrap: wrap; gap: 8px; }
+.missed-actions .btn {
+  background: #fff;
+  border: 1.5px solid var(--gray-200);
+  color: var(--black);
+  border-radius: 8px;
+  padding: 7px 12px;
+  font-weight: 600;
+}
+.missed-actions .btn:hover { border-color: var(--red); }
+.missed-hint { font-size: 0.8rem; color: var(--gray-400); margin-bottom: 0; }
