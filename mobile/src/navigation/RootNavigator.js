@@ -7,15 +7,29 @@ import { useAuth } from "../context/AuthContext";
 import { colors } from "../theme";
 import LoginScreen from "../screens/LoginScreen";
 import AttendanceScreen from "../screens/AttendanceScreen";
+import RecordsScreen from "../screens/RecordsScreen";
 import MyTasksScreen from "../screens/MyTasksScreen";
 import ProfileScreen from "../screens/ProfileScreen";
 import PlaceholderScreen from "../screens/PlaceholderScreen";
 
 const Tab = createBottomTabNavigator();
 const Stack = createNativeStackNavigator();
+const AttStack = createNativeStackNavigator();
 
 // Tiny emoji "icon" — swap for a proper icon set (e.g. @expo/vector-icons) later.
 const icon = (glyph) => ({ color }) => <Text style={{ fontSize: 20, color }}>{glyph}</Text>;
+
+// In/Out tab is a stack so Attendance can open the Records screen.
+function AttendanceStack() {
+  return (
+    <AttStack.Navigator
+      screenOptions={{ headerStyle: { backgroundColor: colors.white }, headerTitleStyle: { fontWeight: "800" }, headerTintColor: colors.red }}
+    >
+      <AttStack.Screen name="In / Out" component={AttendanceScreen} />
+      <AttStack.Screen name="Records" component={RecordsScreen} options={{ title: "Attendance Records" }} />
+    </AttStack.Navigator>
+  );
+}
 
 function Tabs() {
   return (
@@ -27,7 +41,7 @@ function Tabs() {
         headerTitleStyle: { fontWeight: "800" },
       }}
     >
-      <Tab.Screen name="In / Out" component={AttendanceScreen} options={{ tabBarIcon: icon("⏱") }} />
+      <Tab.Screen name="In / Out" component={AttendanceStack} options={{ headerShown: false, tabBarIcon: icon("⏱") }} />
       <Tab.Screen name="My Tasks" component={MyTasksScreen} options={{ tabBarIcon: icon("✅") }} />
       <Tab.Screen
         name="Projects"

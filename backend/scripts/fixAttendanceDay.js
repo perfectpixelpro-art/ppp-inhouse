@@ -53,7 +53,7 @@ const run = async () => {
 
   console.log(`Before: in=${rec.checkIn} out=${rec.checkOut} dayType=${rec.dayType} worked=${fmt(rec.workedMs || 0)} breaks=${(rec.breaks || []).length}`);
   console.log(`After : in=${checkIn.toLocaleTimeString("en-IN", { timeZone: "Asia/Kolkata" })} out=${checkOut.toLocaleTimeString("en-IN", { timeZone: "Asia/Kolkata" })} dayType=${FIX.dayType} worked=${fmt(workedMs)}`);
-  const target = (FIX.dayType === "half" ? 4 : 8) * 3600000;
+  const target = (FIX.dayType === "half" ? 4.25 : 8) * 3600000;
   const diff = workedMs - target;
   console.log(`Result: ${diff >= 0 ? "overtime" : "short"} ${fmt(Math.abs(diff))} (vs ${FIX.dayType} ${target / 3600000}h target)\n`);
 

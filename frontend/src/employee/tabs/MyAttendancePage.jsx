@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { myAttendance, myToday, checkIn, checkOut, saveDsr, markRain, fetchHolidays, fetchMissedDays, classifyMissedDay } from "../../api/employee";
+import { myAttendance, myToday, checkIn, checkOut, saveDsr, markRain, fetchHolidays, fetchMissedDays, classifyMissedDay, ackHalfLunch } from "../../api/employee";
 import { fmtDate, fmtTime } from "../../panel/utils";
 import Modal from "../../panel/Modal";
 import AttendanceCalendar from "../../panel/AttendanceCalendar";
@@ -10,7 +10,7 @@ import "./attendance.css";
 
 const HOUR = 3600000;
 // Target worked time depends on the day type chosen at check-in
-const targetMs = (rec) => (rec?.dayType === "half" ? 4 : 8) * HOUR;
+const targetMs = (rec) => (rec?.dayType === "half" ? 4.25 : 8) * HOUR;
 
 const workedNow = (rec, now) => {
   if (!rec) return 0;
@@ -98,6 +98,12 @@ export default function MyAttendancePage() {
     }
   };
   const prettyDay = (d) => new Date(d + "T00:00").toLocaleDateString("en-IN", { weekday: "long", day: "numeric", month: "short" });
+
+  // Dismiss the half-day "you worked through lunch" popup so it won't reappear.
+  const dismissHalfLunch = async () => {
+    setToday((t) => (t ? { ...t, halfLunchNotice: false } : t));
+    try { await ackHalfLunch(); } catch { /* non-blocking */ }
+  };
 
   useEffect(() => {
     clearInterval(tick.current);
@@ -276,6 +282,20 @@ export default function MyAttendancePage() {
           <p className="missed-hint">"Forgot to punch in" will ask HR to fill in your actual times.</p>
         </Modal>
       )}
+      {today?.halfLunchNotice && (
+        <Modal title="You were working during lunch" onClose={dismissHalfLunch}>
+          <p style={{ marginTop: 0 }}>
+            You're on a <strong>half day</strong>, but your timer was still running at the 2 PM lunch break, so it was auto-paused.
+          </p>
+          <p style={{ color: "var(--gray-600)" }}>
+            Please <strong>contact HR to adjust your timing</strong> if this affects your half-day hours.
+            Your half-day target is <strong>4h 15m</strong>.
+          </p>
+          <div style={{ textAlign: "right" }}>
+            <button className="btn btn-primary" onClick={dismissHalfLunch}>Got it</button>
+          </div>
+        </Modal>
+      )}
       {recordsOpen ? (
         <div>
           <div className="page-head">
@@ -330,7 +350,7 @@ export default function MyAttendancePage() {
       <div className="page-head">
         <div>
           <h2>In / Out</h2>
-          <p>Full day 8 h · Half day 4 h (no lunch) — choose when you check in</p>
+          <p>Full day 8 h · Half day 4 h 15 m — choose when you check in</p>
         </div>
       </div>
 
@@ -350,7 +370,7 @@ export default function MyAttendancePage() {
                 </span>
                 {today && state !== "not_started" && (
                   <span className={`day-tag ${isHalf ? "half" : "full"}`}>
-                    {isHalf ? "Half day · 4h" : "Full day · 8h"}
+                    {isHalf ? "Half day · 4h 15m" : "Full day · 8h"}
                   </span>
                 )}
               </div>
@@ -378,7 +398,7 @@ export default function MyAttendancePage() {
                     ☀️ Full Day <small>8h</small>
                   </button>
                   <button className="btn-big btn-half" disabled={busy} onClick={() => act(() => checkIn("half"))}>
-                    🌤 Half Day <small>4h · no lunch</small>
+                    🌤 Half Day <small>4h 15m</small>
                   </button>
                 </div>
               )}

@@ -6,6 +6,7 @@ export const myAttendance = () => client.get("/me/attendance").then((r) => r.dat
 export const myToday = () => client.get("/me/attendance/today").then((r) => r.data);
 export const fetchMissedDays = () => client.get("/me/attendance/missed").then((r) => r.data.dates);
 export const classifyMissedDay = (date, kind) => client.post("/me/attendance/classify", { date, kind }).then((r) => r.data);
+export const ackHalfLunch = () => client.post("/me/attendance/ack-half-lunch").then((r) => r.data);
 // Touch devices (phone/tablet in desktop mode) must attach a location; Macs don't.
 export const checkIn = async (dayType) => {
   const body = dayType ? { dayType } : {};

@@ -142,6 +142,14 @@ export const classifyDay = async (req, res) => {
   res.status(201).json(rec);
 };
 
+// POST /api/me/attendance/ack-half-lunch  — dismiss the "you worked through lunch
+// on a half day, contact HR" popup so it doesn't show again.
+export const ackHalfLunch = async (req, res) => {
+  const rec = await Attendance.findOne({ employee: req.user._id, date: todayYMD() });
+  if (rec && rec.halfLunchNotice) { rec.halfLunchNotice = false; await rec.save(); }
+  res.json({ ok: true });
+};
+
 // GET /api/me/attendance/today  — the live record for today (8:30 PM cap applied)
 export const myToday = async (req, res) => {
   const record = await Attendance.findOne({ employee: req.user._id, date: todayYMD() });

@@ -9,7 +9,7 @@ import LocationStamp from "../LocationStamp";
 import { monthlySummary, SHORT_RATE, overtimeMs } from "../payroll";
 
 const HOUR = 3600000;
-const targetMs = (r) => (r.dayType === "half" ? 4 : 8) * HOUR;
+const targetMs = (r) => (r.dayType === "half" ? 4.25 : 8) * HOUR;
 const workedClass = (ms, t) => (ms >= t ? "work-green" : ms >= t - 0.5 * HOUR ? "work-yellow" : "work-red");
 const hrs = (ms) => +(ms / HOUR).toFixed(2);
 const fmtHm = (ms) => {

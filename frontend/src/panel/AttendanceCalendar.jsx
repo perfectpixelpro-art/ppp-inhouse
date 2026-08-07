@@ -6,7 +6,7 @@ import { overtimeMs } from "./payroll";
 
 const DOW = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 const HOUR = 3600000;
-const targetMs = (r) => (r.dayType === "half" ? 4 : 8) * HOUR;
+const targetMs = (r) => (r.dayType === "half" ? 4.25 : 8) * HOUR;
 const fmtHm = (ms) => {
   const m = Math.round(ms / 60000);
   const h = Math.floor(m / 60);

@@ -21,7 +21,9 @@ export function workingDaysInMonth(year, month0, holidaySet = new Set()) {
   return count;
 }
 
-export const targetMsFor = (r) => (r.dayType === "half" ? 4 : 8) * HOUR;
+// Full day = 8h. Half day = 4h 15m (allows a lunch cut on a half day).
+export const HALF_TARGET_MS = 4 * HOUR + 15 * 60000;
+export const targetMsFor = (r) => (r.dayType === "half" ? HALF_TARGET_MS : 8 * HOUR);
 
 // A full day always excludes 1 hour of lunch. If the employee actually paused for
 // lunch, the timer already excluded it (and a "lunch" break is on the record). If
@@ -48,7 +50,7 @@ export function monthlySummary(year, month0, records, holidaySet = new Set()) {
   // worked. Half-days owe only 4h, so trim 4h off the base for each.
   const excusedDays = records.filter(isExcusedDay).length;
   const halfDays = records.filter((r) => !isExcusedDay(r) && r.dayType === "half").length;
-  const baseMs = Math.max(0, workingDays * 8 * HOUR - excusedDays * 8 * HOUR - halfDays * 4 * HOUR);
+  const baseMs = Math.max(0, workingDays * 8 * HOUR - excusedDays * 8 * HOUR - halfDays * HALF_TARGET_MS);
   const workedMs = records.filter((r) => !isExcusedDay(r)).reduce((s, r) => s + chargeableMs(r), 0);
   const diffMs = workedMs - baseMs; // + overtime, − short
   const shortHours = diffMs < 0 ? -diffMs / HOUR : 0;
@@ -89,8 +91,8 @@ if (typeof process !== "undefined" && process.argv?.[1] && import.meta.url === `
   eq(overtimeMs({ state: "ended", workedMs: 8 * HOUR, breaks: lunchBreak }), 0, "8h with lunch → 0");
   // worked 9h and took lunch (imported/live) → +1h overtime, no extra deduction
   eq(overtimeMs({ state: "ended", workedMs: 9 * HOUR, breaks: lunchBreak }), 1 * HOUR, "9h with lunch → +1h");
-  // half day: 4h target, no lunch deduction
-  eq(overtimeMs({ state: "ended", workedMs: 4 * HOUR, dayType: "half" }), 0, "half day 4h → 0");
+  // half day: 4h15 target, no lunch deduction
+  eq(overtimeMs({ state: "ended", workedMs: HALF_TARGET_MS, dayType: "half" }), 0, "half day 4h15 → 0");
 
   // net balance: 9h(no lunch→8 chargeable, 0), 6h(no lunch→5, −3h), unfinished skipped → −3h
   const recs = [

@@ -49,6 +49,9 @@ const attendanceSchema = new mongoose.Schema(
     selfReportedAt: { type: Date },
     // "forgot to punch in" — flags the day for HR to fill in the real times.
     needsReview: { type: Boolean, default: false },
+    // Set when a HALF day was auto-paused for the 2 PM lunch — the employee was
+    // working through lunch; the portal shows a "contact HR to adjust" popup once.
+    halfLunchNotice: { type: Boolean, default: false },
     // Set only when checking in from a touch device (phone/tablet using desktop
     // mode). Office Macs report no touch and check in without a location prompt.
     checkInLocation: {

@@ -4,6 +4,7 @@ import {
   myToday,
   missedDays,
   classifyDay,
+  ackHalfLunch,
   checkIn,
   checkOut,
   saveDsr,
@@ -26,6 +27,7 @@ router.get("/attendance", myAttendance);
 router.get("/attendance/today", myToday);
 router.get("/attendance/missed", missedDays);
 router.post("/attendance/classify", classifyDay);
+router.post("/attendance/ack-half-lunch", ackHalfLunch);
 router.post("/attendance/checkin", checkIn);
 router.post("/attendance/checkout", checkOut);
 router.post("/attendance/dsr", saveDsr);

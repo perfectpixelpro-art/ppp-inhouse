@@ -2,7 +2,7 @@
 
 const HOUR = 3600000;
 
-export const targetMs = (rec) => (rec?.dayType === "half" ? 4 : 8) * HOUR;
+export const targetMs = (rec) => (rec?.dayType === "half" ? 4.25 : 8) * HOUR;
 
 // Live worked ms for today's record (adds the running segment while working).
 export const workedNow = (rec, now = Date.now()) => {

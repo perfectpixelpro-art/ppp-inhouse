@@ -13,7 +13,9 @@ const hadLunch = (r) => (r.breaks || []).some((b) => b.type === "lunch");
 // up to 2 PM; they must resume manually (and can't before 3 PM — see checkIn).
 // `nowMs` is injectable for deterministic tests.
 export const applyLunchStop = async (record, nowMs = Date.now()) => {
-  if (!record || record.dayType !== "full" || record.state !== "working") return record;
+  // Applies to full AND half days now. A half day that is still working at 2 PM
+  // means the person is working through lunch — we pause and flag it for HR.
+  if (!record || (record.dayType !== "full" && record.dayType !== "half") || record.state !== "working") return record;
   if (hadLunch(record)) return record;
 
   const start = lunchStartInstant(record.date).getTime();
@@ -24,6 +26,7 @@ export const applyLunchStop = async (record, nowMs = Date.now()) => {
   record.currentStart = null;
   record.state = "on_lunch";
   record.breaks.push({ type: "lunch", start: new Date(start) });
+  if (record.dayType === "half") record.halfLunchNotice = true; // show the "contact HR" popup once
   await record.save();
   return record;
 };
