@@ -35,24 +35,25 @@ export const lunchDeductMs = (r) => (r.dayType !== "half" && !tookLunch(r) ? LUN
 // lunch). The "Worked" column still shows raw workedMs — only overtime uses this.
 export const chargeableMs = (r) => Math.max(0, (r.workedMs || 0) - lunchDeductMs(r));
 
-// Half-days, leave, and WFH are fully excused — they never count as short (or
-// overtime). Every other finished day is chargeable − target (+ overtime, − short).
-export const isExcusedDay = (r) => r?.dayType === "half" || r?.status === "leave" || r?.status === "wfh";
+// Leave and WFH are fully excused — never short or overtime. A half-day is NOT
+// excused: it just has a 4h target, so short is measured against 4h (not 8h).
+export const isExcusedDay = (r) => r?.status === "leave" || r?.status === "wfh";
 export const overtimeMs = (r) => (isExcusedDay(r) ? 0 : chargeableMs(r) - targetMsFor(r));
 
 // records: this employee's attendance for the month. Returns hours + money.
 // Rain days are flagged for HR's information but count like any other working day.
 export function monthlySummary(year, month0, records, holidaySet = new Set()) {
   const workingDays = workingDaysInMonth(year, month0, holidaySet);
-  // Half-days / leave / WFH are excused: drop them from the 8h/day base AND from
-  // worked, so they neither demand hours nor add short/overtime.
+  // Leave / WFH days are excused: drop their full 8h from the base and skip their
+  // worked. Half-days owe only 4h, so trim 4h off the base for each.
   const excusedDays = records.filter(isExcusedDay).length;
-  const baseMs = Math.max(0, workingDays - excusedDays) * 8 * HOUR;
+  const halfDays = records.filter((r) => !isExcusedDay(r) && r.dayType === "half").length;
+  const baseMs = Math.max(0, workingDays * 8 * HOUR - excusedDays * 8 * HOUR - halfDays * 4 * HOUR);
   const workedMs = records.filter((r) => !isExcusedDay(r)).reduce((s, r) => s + chargeableMs(r), 0);
   const diffMs = workedMs - baseMs; // + overtime, − short
   const shortHours = diffMs < 0 ? -diffMs / HOUR : 0;
   const deduction = Math.round(shortHours * SHORT_RATE);
-  return { workingDays, baseMs, workedMs, diffMs, shortHours, deduction, excusedDays, rainDays: records.filter((r) => r.rain).length };
+  return { workingDays, baseMs, workedMs, diffMs, shortHours, deduction, excusedDays, halfDays, rainDays: records.filter((r) => r.rain).length };
 }
 
 // Net overtime (+) or shortfall (−) across finished days, in ms.
