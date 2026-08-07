@@ -294,7 +294,12 @@ export default function MyAttendancePage() {
             <span className="rec-count">{recRecords.length} day{recRecords.length === 1 ? "" : "s"} recorded</span>
           </div>
 
-          <BalanceCard records={recRecords} label={`${monthLabel(activeMonth)} balance`} />
+          <BalanceCard
+            records={recRecords}
+            label={`${monthLabel(activeMonth)} balance`}
+            halfDays={recRecords.filter((r) => r.dayType === "half").length}
+            leaveDays={recRecords.filter((r) => r.status === "leave").length}
+          />
 
           <div className="rec-month-stats">
             <div><span className="rec-stat-label">Working days (excl. offs &amp; holidays)</span><span className="rec-stat-val">{summary.workingDays}</span></div>
@@ -419,8 +424,8 @@ export default function MyAttendancePage() {
           <BalanceCard
             records={monthRecords}
             label={`${monthLabel(thisMonth)} balance`}
-            halfDays={records.filter((r) => r.dayType === "half").length}
-            leaveDays={records.filter((r) => r.status === "leave").length}
+            halfDays={monthRecords.filter((r) => r.dayType === "half").length}
+            leaveDays={monthRecords.filter((r) => r.status === "leave").length}
           />
 
           <label className="rain-toggle" title="Tick before checking in — HR is notified and no auto-deduction applies">
