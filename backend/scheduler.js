@@ -163,26 +163,24 @@ export const notCheckedInPing = async (now = new Date()) => {
 
 // Registers all recurring background jobs.
 export const startScheduler = () => {
-  // 3:10 PM — remind anyone whose timer is still paused for lunch now that the
-  // 2–3 PM window has closed. (The "you haven't checked in yet" ping was removed
-  // on request — it caused confusion when people checked in after 3:10 PM.)
-  cron.schedule(
-    "10 15 * * *",
-    () =>
-      remindLunchNotResumed()
-        .then((n) => n && console.log(`[scheduler] 3:10 PM lunch reminder — pinged ${n}`))
-        .catch((e) => console.error("[scheduler] lunch reminder failed:", e.message)),
-    IST
-  );
-
-  // Every 5 min — nudge anyone whose SHORT break has run past 15 minutes without
-  // resuming. Lunch is exempt (it has its own 2–3 PM window and the 3:10 PM job).
+  // Every 5 min — two independent nudges, both keyed off the record's live state
+  // so they can't overlap (see services/attendanceBreakReminder.js):
+  //   • SHORT break open past 10 min  → resume-after-break ping
+  //   • still on_lunch after the 2–3 PM window closes (~3 PM) → resume-after-lunch ping
+  // Running lunch on the recurring cron (not a single 3:10 PM shot) means the ping
+  // still goes out if any one tick is missed; the per-break `remindedAt` guard
+  // stops it from re-pinging the same break.
   cron.schedule(
     "*/5 * * * *",
-    () =>
-      remindLongBreaks()
-        .then((n) => n && console.log(`[scheduler] break reminder — pinged ${n}`))
-        .catch((e) => console.error("[scheduler] break reminder failed:", e.message)),
+    async () => {
+      try {
+        const [brk, lunch] = await Promise.all([remindLongBreaks(), remindLunchNotResumed()]);
+        if (brk) console.log(`[scheduler] break reminder — pinged ${brk}`);
+        if (lunch) console.log(`[scheduler] lunch reminder — pinged ${lunch}`);
+      } catch (e) {
+        console.error("[scheduler] break/lunch reminder failed:", e.message);
+      }
+    },
     IST
   );
 

@@ -136,6 +136,8 @@ export default function AttendancePage() {
       <BalanceCard
         records={records}
         label={emp ? "Balance — selected employee" : "Balance — all employees"}
+        halfDays={records.filter((r) => r.dayType === "half").length}
+        leaveDays={records.filter((r) => r.status === "leave").length}
       />
 
       {loading ? (
