@@ -416,7 +416,12 @@ export default function MyAttendancePage() {
             </div>
           </div>
 
-          <BalanceCard records={monthRecords} label={`${monthLabel(thisMonth)} balance`} />
+          <BalanceCard
+            records={monthRecords}
+            label={`${monthLabel(thisMonth)} balance`}
+            halfDays={records.filter((r) => r.dayType === "half").length}
+            leaveDays={records.filter((r) => r.status === "leave").length}
+          />
 
           <label className="rain-toggle" title="Tick before checking in — HR is notified and no auto-deduction applies">
             <input

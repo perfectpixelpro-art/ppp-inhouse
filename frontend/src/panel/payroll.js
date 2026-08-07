@@ -34,18 +34,25 @@ export const lunchDeductMs = (r) => (r.dayType !== "half" && !tookLunch(r) ? LUN
 // Worked time that counts toward overtime/short (raw worked minus any un-taken
 // lunch). The "Worked" column still shows raw workedMs — only overtime uses this.
 export const chargeableMs = (r) => Math.max(0, (r.workedMs || 0) - lunchDeductMs(r));
-export const overtimeMs = (r) => chargeableMs(r) - targetMsFor(r); // + overtime, − short
+
+// Half-days, leave, and WFH are fully excused — they never count as short (or
+// overtime). Every other finished day is chargeable − target (+ overtime, − short).
+export const isExcusedDay = (r) => r?.dayType === "half" || r?.status === "leave" || r?.status === "wfh";
+export const overtimeMs = (r) => (isExcusedDay(r) ? 0 : chargeableMs(r) - targetMsFor(r));
 
 // records: this employee's attendance for the month. Returns hours + money.
 // Rain days are flagged for HR's information but count like any other working day.
 export function monthlySummary(year, month0, records, holidaySet = new Set()) {
   const workingDays = workingDaysInMonth(year, month0, holidaySet);
-  const baseMs = workingDays * 8 * HOUR;
-  const workedMs = records.reduce((s, r) => s + chargeableMs(r), 0); // lunch excluded
+  // Half-days / leave / WFH are excused: drop them from the 8h/day base AND from
+  // worked, so they neither demand hours nor add short/overtime.
+  const excusedDays = records.filter(isExcusedDay).length;
+  const baseMs = Math.max(0, workingDays - excusedDays) * 8 * HOUR;
+  const workedMs = records.filter((r) => !isExcusedDay(r)).reduce((s, r) => s + chargeableMs(r), 0);
   const diffMs = workedMs - baseMs; // + overtime, − short
   const shortHours = diffMs < 0 ? -diffMs / HOUR : 0;
   const deduction = Math.round(shortHours * SHORT_RATE);
-  return { workingDays, baseMs, workedMs, diffMs, shortHours, deduction, rainDays: records.filter((r) => r.rain).length };
+  return { workingDays, baseMs, workedMs, diffMs, shortHours, deduction, excusedDays, rainDays: records.filter((r) => r.rain).length };
 }
 
 // Net overtime (+) or shortfall (−) across finished days, in ms.

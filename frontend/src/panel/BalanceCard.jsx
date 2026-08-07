@@ -9,7 +9,8 @@ const fmtHm = (ms) => {
 
 // Overall overtime / shortfall across finished days. Rain days count normally.
 // Used on both the employee In/Out page and the admin/HR In/Out tab.
-export default function BalanceCard({ records = [], label = "Overall balance" }) {
+export default function BalanceCard({ records = [], label = "Overall balance", halfDays, leaveDays }) {
+  const showCounters = halfDays != null || leaveDays != null;
   const done = records.filter((r) => r.state === "ended");
   let over = 0;
   let short = 0;
@@ -31,6 +32,18 @@ export default function BalanceCard({ records = [], label = "Overall balance" })
         <span className="balance-sub">{positive ? "overtime in hand" : "hours short"}</span>
       </div>
       <div className="balance-split">
+        {showCounters && (
+          <>
+            <div>
+              <span className="balance-label">Half days</span>
+              <span className="balance-chip">{halfDays || 0}</span>
+            </div>
+            <div>
+              <span className="balance-label">Leaves</span>
+              <span className="balance-chip">{leaveDays || 0}</span>
+            </div>
+          </>
+        )}
         <div>
           <span className="balance-label">Total overtime</span>
           <span className="balance-chip up">+{fmtHm(over)}</span>

@@ -6,7 +6,27 @@ export const editAttendance = async (req, res) => {
   const rec = await Attendance.findById(req.params.id);
   if (!rec) return res.status(404).json({ message: "Record not found" });
 
-  const { checkIn, checkOut } = req.body;
+  const { checkIn, checkOut, dayType, status } = req.body;
+
+  // Optional day-type change (full ↔ half).
+  if (["full", "half"].includes(dayType)) rec.dayType = dayType;
+
+  // Mark the whole day as Leave or WFH — no times needed; those are excused days.
+  if (status === "leave" || status === "wfh") {
+    rec.status = status;
+    rec.state = "not_started";
+    rec.checkIn = null;
+    rec.checkOut = null;
+    rec.workedMs = 0;
+    rec.currentStart = null;
+    rec.needsReview = false;
+    rec.editedBy = req.user._id;
+    rec.editedAt = new Date();
+    await rec.save();
+    return res.json(await rec.populate("employee", "name email designation photo department"));
+  }
+
+  // Otherwise it's a time correction (present day).
   if (checkIn) rec.checkIn = new Date(checkIn);
   if (checkOut) rec.checkOut = new Date(checkOut);
   if (!rec.checkIn || !rec.checkOut) {
@@ -20,6 +40,7 @@ export const editAttendance = async (req, res) => {
   rec.state = "ended";       // an edited day is a finished day
   rec.currentStart = null;   // stop any running segment
   rec.status = "present";
+  rec.needsReview = false;
   rec.editedBy = req.user._id;
   rec.editedAt = new Date();
   await rec.save();

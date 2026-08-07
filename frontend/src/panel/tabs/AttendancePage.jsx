@@ -36,7 +36,7 @@ export default function AttendancePage() {
   const toTimeInput = (d) => (d ? new Date(d).toTimeString().slice(0, 5) : "");
   const openEdit = (rec) => {
     setEditErr("");
-    setEdit({ rec, in: toTimeInput(rec.checkIn), out: toTimeInput(rec.checkOut) });
+    setEdit({ rec, in: toTimeInput(rec.checkIn), out: toTimeInput(rec.checkOut), dayType: rec.dayType || "full" });
   };
   const saveEdit = async () => {
     setSaving(true); setEditErr("");
@@ -44,7 +44,20 @@ export default function AttendancePage() {
       await editAttendance(edit.rec._id, {
         checkIn: new Date(`${edit.rec.date}T${edit.in}`).toISOString(),
         checkOut: new Date(`${edit.rec.date}T${edit.out}`).toISOString(),
+        dayType: edit.dayType,
       });
+      setEdit(null);
+      const params = { month }; if (emp) params.employee = emp;
+      fetchAttendance(params).then(setRecords);
+    } catch (e) {
+      setEditErr(e.response?.data?.message || e.message);
+    } finally { setSaving(false); }
+  };
+  // Mark the whole day as Leave or WFH (no times needed) — an excused day.
+  const markDay = async (status) => {
+    setSaving(true); setEditErr("");
+    try {
+      await editAttendance(edit.rec._id, { status });
       setEdit(null);
       const params = { month }; if (emp) params.employee = emp;
       fetchAttendance(params).then(setRecords);
@@ -214,11 +227,25 @@ export default function AttendancePage() {
               <label>Check out</label>
               <input type="time" value={edit.out} onChange={(e) => setEdit((s) => ({ ...s, out: e.target.value }))} />
             </div>
+            <div className="form-field">
+              <label>Day type</label>
+              <select value={edit.dayType} onChange={(e) => setEdit((s) => ({ ...s, dayType: e.target.value }))}>
+                <option value="full">Full day (8h)</option>
+                <option value="half">Half day (4h · excused, no short)</option>
+              </select>
+            </div>
           </div>
           <p className="p-sub" style={{ marginTop: "0.75rem" }}>
             Worked time is recalculated as (out − in) minus recorded breaks, and the day is marked ended.
-            An un-taken lunch hour is still deducted by payroll.
+            A half day is fully excused — no short time or deduction.
           </p>
+          <div style={{ borderTop: "1px solid var(--gray-200)", marginTop: "0.75rem", paddingTop: "0.75rem" }}>
+            <label style={{ fontWeight: 600, fontSize: ".85rem" }}>Or mark the whole day as:</label>
+            <div style={{ display: "flex", gap: 8, marginTop: 6 }}>
+              <button className="btn btn-ghost btn-sm" disabled={saving} onClick={() => markDay("leave")}>🌴 On Leave</button>
+              <button className="btn btn-ghost btn-sm" disabled={saving} onClick={() => markDay("wfh")}>🏠 Work From Home</button>
+            </div>
+          </div>
         </Modal>
       )}
 
