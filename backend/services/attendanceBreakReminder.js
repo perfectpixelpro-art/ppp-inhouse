@@ -49,7 +49,7 @@ export const remindLongBreaks = async (nowMs = Date.now()) => {
     const b = openBreak(r);
     const mins = Math.round((nowMs - new Date(b.start).getTime()) / 60000);
     await postToChannel(
-      `:hourglass_flowing_sand: ${mention(r.employee)} — you've been on a short break for *${mins} min* and your timer is still paused. Resume it in the PPP portal when you're back.`,
+      `:hourglass_flowing_sand: ${mention(r.employee)} — looks like you *forgot to punch back in after your short break* (${mins} min and counting). Resume your timer in the PPP portal.`,
       breakChannel()
     );
     b.remindedAt = new Date(nowMs);
@@ -67,7 +67,7 @@ export const remindLunchNotResumed = async (nowMs = Date.now()) => {
   for (const r of records) {
     if (!lunchReminderDue(r, nowMs)) continue;
     await postToChannel(
-      `:fork_and_knife: ${mention(r.employee)} — lunch ended at *3:00 PM* and your timer is still paused. Resume it in the PPP portal.`,
+      `:fork_and_knife: ${mention(r.employee)} — looks like you *forgot to punch back in after lunch*. Lunch ended at *3:00 PM* and your timer is still paused. Resume it in the PPP portal.`,
       breakChannel()
     );
     const b = openBreak(r);
