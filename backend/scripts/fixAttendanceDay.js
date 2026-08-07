@@ -7,7 +7,7 @@
 // RUN THIS ON THE LIVE SERVER — it uses MONGO_URI from that machine's .env.
 //
 // Current target: Saquib Khan, 2026-08-06 → 11:47 AM to 3:29 PM IST, half day,
-// no lunch break (worked 3h 42m; against a 4h half-day that is 18m short).
+// minus a 1h lunch (worked 2h 42m; against a 4h half-day that is 1h 18m short).
 import dotenv from "dotenv";
 import mongoose from "mongoose";
 import connectDB from "../config/db.js";
@@ -23,7 +23,8 @@ const FIX = {
   inIST: "11:47",   // HH:MM (24h) IST
   outIST: "15:29",  // 3:29 PM
   dayType: "half",  // "full" | "half"
-  clearBreaks: true, // no lunch/break — worked is the full in→out span
+  clearBreaks: true, // start from the full in→out span
+  lunchMinutes: 60,  // subtract this much lunch from worked (0 = none)
 };
 // ------------------------------------------------------------------------
 
@@ -47,7 +48,8 @@ const run = async () => {
   if (checkOut <= checkIn) { console.log("✗ out must be after in"); process.exit(1); }
 
   const breaksMs = FIX.clearBreaks ? 0 : (rec.breaks || []).reduce((s, b) => s + (b.end ? new Date(b.end) - new Date(b.start) : 0), 0);
-  const workedMs = (checkOut - checkIn) - breaksMs;
+  const lunchMs = (FIX.lunchMinutes || 0) * 60000;
+  const workedMs = (checkOut - checkIn) - breaksMs - lunchMs;
 
   console.log(`Before: in=${rec.checkIn} out=${rec.checkOut} dayType=${rec.dayType} worked=${fmt(rec.workedMs || 0)} breaks=${(rec.breaks || []).length}`);
   console.log(`After : in=${checkIn.toLocaleTimeString("en-IN", { timeZone: "Asia/Kolkata" })} out=${checkOut.toLocaleTimeString("en-IN", { timeZone: "Asia/Kolkata" })} dayType=${FIX.dayType} worked=${fmt(workedMs)}`);
@@ -60,6 +62,11 @@ const run = async () => {
     rec.checkOut = checkOut;
     rec.dayType = FIX.dayType;
     if (FIX.clearBreaks) rec.breaks = [];
+    // Record the lunch as a real break (mid-span) so the day reads accurately.
+    if (lunchMs > 0) {
+      const lunchStart = new Date(checkIn.getTime() + Math.max(0, (checkOut - checkIn - lunchMs) / 2));
+      rec.breaks = [...(rec.breaks || []), { type: "lunch", start: lunchStart, end: new Date(lunchStart.getTime() + lunchMs) }];
+    }
     rec.workedMs = workedMs;
     rec.state = "ended";
     rec.currentStart = null;
